@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Star, ShoppingCart, Share2, Heart } from 'lucide-react';
-import { Product, ProductVariant, Review } from '../../lib/schema';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Star, ShoppingCart, Share2 } from 'lucide-react';
+import type { Product, ProductVariant, Review } from '../../lib/schema';
+import { getProductBySlug, getProductImages, getProductVariants, getProductReviews, trackPageView } from '../../lib/db';
 
 interface ProductLandingPageProps {
   slug: string;
@@ -17,49 +18,39 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Fetch product data from database based on slug
-    // Mock data for now
-    const mockProduct: Product = {
-      id: 'prod-1',
-      user_id: 'user-123',
-      store_id: 'store-123',
-      name: 'Premium Cotton T-Shirt',
-      description: 'High-quality cotton t-shirt perfect for everyday wear. Made from 100% organic cotton with a comfortable fit.',
-      slug,
-      cover_image_url: 'https://via.placeholder.com/400x400?text=Product+Image+1',
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    async function fetchProductData() {
+      setIsLoading(true);
+      try {
+        const productData = await getProductBySlug(slug);
+        if (!productData) {
+          setProduct(null);
+          setIsLoading(false);
+          return;
+        }
 
-    const mockImages = [
-      'https://via.placeholder.com/400x400?text=Product+Image+1',
-      'https://via.placeholder.com/400x400?text=Product+Image+2',
-      'https://via.placeholder.com/400x400?text=Product+Image+3',
-    ];
+        const [imagesData, variantsData, reviewsData] = await Promise.all([
+          getProductImages(productData.id),
+          getProductVariants(productData.id),
+          getProductReviews(productData.id),
+        ]);
 
-    const mockVariants: ProductVariant[] = [
-      { id: 'var-1', product_id: 'prod-1', name: 'Size: M, Color: Black', price: 25000, stock: 15, created_at: new Date().toISOString() },
-      { id: 'var-2', product_id: 'prod-1', name: 'Size: L, Color: Black', price: 25000, stock: 10, created_at: new Date().toISOString() },
-      { id: 'var-3', product_id: 'prod-1', name: 'Size: M, Color: White', price: 25000, stock: 8, created_at: new Date().toISOString() },
-      { id: 'var-4', product_id: 'prod-1', name: 'Size: L, Color: White', price: 25000, stock: 5, created_at: new Date().toISOString() },
-    ];
+        setProduct(productData);
+        setImages(imagesData.map(img => img.image_url));
+        setVariants(variantsData);
+        setSelectedVariant(variantsData[0] || null);
+        setReviews(reviewsData);
 
-    const mockReviews: Review[] = [
-      { id: 'rev-1', product_id: 'prod-1', customer_name: 'John Doe', rating: 5, comment: 'Great quality! Very comfortable.', created_at: new Date().toISOString() },
-      { id: 'rev-2', product_id: 'prod-1', customer_name: 'Jane Smith', rating: 4, comment: 'Good product, fast delivery.', created_at: new Date().toISOString() },
-      { id: 'rev-3', product_id: 'prod-1', customer_name: 'Mike Johnson', rating: 5, comment: 'Love it! Will buy again.', created_at: new Date().toISOString() },
-    ];
+        // Track page view
+        await trackPageView(productData.id);
+      } catch (error) {
+        console.error('Error fetching product data:', error);
+        setProduct(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    setProduct(mockProduct);
-    setImages(mockImages);
-    setVariants(mockVariants);
-    setSelectedVariant(mockVariants[0]);
-    setReviews(mockReviews);
-    setIsLoading(false);
-
-    // Track page view
-    // TODO: Send page view event to analytics
+    fetchProductData();
   }, [slug]);
 
   const nextImage = () => {

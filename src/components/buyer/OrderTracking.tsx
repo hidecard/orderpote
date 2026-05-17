@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle, Clock, Package, Truck, Download, ExternalLink, RefreshCw } from 'lucide-react';
-import { Order } from '../../lib/schema';
+import type { Order } from '../../lib/schema';
+import { getOrderById } from '../../lib/db';
 
 interface OrderTrackingProps {
   orderId: string;
@@ -11,33 +12,24 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Fetch order data from database
-    // Mock data for now
-    const mockOrder: Order = {
-      id: orderId,
-      product_id: 'prod-1',
-      variant_id: 'var-1',
-      customer_name: 'John Doe',
-      customer_phone: '09123456789',
-      customer_address: '123 Main St',
-      customer_region: 'Yangon',
-      customer_township: 'Bahan',
-      quantity: 2,
-      total_price: 50000,
-      payment_status: 'paid',
-      delivery_status: 'shipped',
-      delivery_service: 'Royal Express',
-      tracking_id: 'RE123456789',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    async function fetchOrder() {
+      setIsLoading(true);
+      try {
+        const orderData = await getOrderById(orderId);
+        setOrder(orderData);
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        setOrder(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    setOrder(mockOrder);
-    setIsLoading(false);
+    fetchOrder();
 
-    // Set up real-time updates (polling or WebSocket)
+    // Set up real-time updates (polling)
     const interval = setInterval(() => {
-      // TODO: Fetch latest order status
+      fetchOrder();
     }, 10000);
 
     return () => clearInterval(interval);

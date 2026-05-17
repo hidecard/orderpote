@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter, MoreVertical, Eye, Edit, Trash2, Share2, QrCode, Link as LinkIcon } from 'lucide-react';
-import { Product } from '../../lib/schema';
+import { useState } from 'react';
+import { Plus, Search, Edit, Trash2, Link as LinkIcon, QrCode } from 'lucide-react';
+import type { Product } from '../../lib/schema';
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([

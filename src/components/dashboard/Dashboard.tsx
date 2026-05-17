@@ -1,43 +1,51 @@
-import React from 'react';
-import { DollarSign, ShoppingCart, Clock, Eye, TrendingUp, Package } from 'lucide-react';
+import { DollarSign, ShoppingCart, Clock, Eye } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useState, useEffect } from 'react';
+import { getDashboardStats, getSalesData, getTopProducts, getProductViews } from '../../lib/db';
 
 export default function Dashboard() {
-  // Mock data for KPI cards
-  const kpiData = {
-    totalRevenue: 1250000,
-    totalOrders: 156,
-    pendingOrders: 12,
-    totalViews: 3420,
-  };
+  const [kpiData, setKpiData] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalViews: 0,
+  });
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const [topProductsData, setTopProductsData] = useState<any[]>([]);
+  const [productViews, setProductViews] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data for sales chart
-  const salesData = [
-    { name: 'Mon', sales: 12000 },
-    { name: 'Tue', sales: 19000 },
-    { name: 'Wed', sales: 15000 },
-    { name: 'Thu', sales: 22000 },
-    { name: 'Fri', sales: 28000 },
-    { name: 'Sat', sales: 35000 },
-    { name: 'Sun', sales: 32000 },
-  ];
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const [stats, sales, topProducts, views] = await Promise.all([
+          getDashboardStats('user-123'), // TODO: Get actual user ID from auth
+          getSalesData(7),
+          getTopProducts(5),
+          getProductViews(10),
+        ]);
 
-  // Mock data for top products
-  const topProductsData = [
-    { name: 'Product A', value: 400, color: '#8884d8' },
-    { name: 'Product B', value: 300, color: '#82ca9d' },
-    { name: 'Product C', value: 200, color: '#ffc658' },
-    { name: 'Product D', value: 150, color: '#ff7300' },
-    { name: 'Others', value: 100, color: '#0088fe' },
-  ];
+        setKpiData(stats);
+        setSalesData(sales);
+        setTopProductsData(topProducts);
+        setProductViews(views);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-  // Mock data for product views
-  const productViews = [
-    { name: 'Sample Product 1', views: 1250, orders: 45 },
-    { name: 'Sample Product 2', views: 980, orders: 32 },
-    { name: 'Sample Product 3', views: 756, orders: 28 },
-    { name: 'Sample Product 4', views: 434, orders: 18 },
-  ];
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -127,7 +135,7 @@ export default function Dashboard() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"

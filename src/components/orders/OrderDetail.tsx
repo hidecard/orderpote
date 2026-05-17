@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle, XCircle, Truck, Package, Image as ImageIcon, Download } from 'lucide-react';
-import { Order } from '../../lib/schema';
+import { useState } from 'react';
+import { ArrowLeft, CheckCircle, XCircle, Truck, Package, Image as ImageIcon } from 'lucide-react';
+import type { Order } from '../../lib/schema';
 
 interface OrderDetailProps {
   orderId: string;
@@ -39,7 +39,7 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
     setOrder({
       ...order,
       delivery_service: deliveryService,
-      tracking_id,
+      tracking_id: trackingId,
     });
     alert('Delivery details saved!');
   };

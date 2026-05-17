@@ -1,4 +1,3 @@
-import React from 'react';
 import { ShoppingBag, Zap, Shield, BarChart } from 'lucide-react';
 
 export default function LandingPage() {

@@ -1,66 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock, CheckCircle, Package, Truck, ChevronRight } from 'lucide-react';
-import { Order } from '../../lib/schema';
+import type { Order } from '../../lib/schema';
+import { getOrdersByCustomerPhone } from '../../lib/db';
 
 export default function MyOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Fetch orders from localStorage or API based on phone number/cookie
-    // Mock data for now
-    const mockOrders: Order[] = [
-      {
-        id: 'ORD-001',
-        product_id: 'prod-1',
-        customer_name: 'John Doe',
-        customer_phone: '09123456789',
-        customer_address: '123 Main St',
-        customer_region: 'Yangon',
-        customer_township: 'Bahan',
-        quantity: 2,
-        total_price: 50000,
-        payment_status: 'paid',
-        delivery_status: 'delivered',
-        created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'ORD-002',
-        product_id: 'prod-2',
-        customer_name: 'John Doe',
-        customer_phone: '09123456789',
-        customer_address: '123 Main St',
-        customer_region: 'Yangon',
-        customer_township: 'Bahan',
-        quantity: 1,
-        total_price: 35000,
-        payment_status: 'paid',
-        delivery_status: 'shipped',
-        delivery_service: 'Royal Express',
-        tracking_id: 'RE123456789',
-        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      {
-        id: 'ORD-003',
-        product_id: 'prod-3',
-        customer_name: 'John Doe',
-        customer_phone: '09123456789',
-        customer_address: '123 Main St',
-        customer_region: 'Yangon',
-        customer_township: 'Bahan',
-        quantity: 1,
-        total_price: 28000,
-        payment_status: 'pending',
-        delivery_status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-    ];
+    async function fetchOrders() {
+      setIsLoading(true);
+      try {
+        // Get phone from localStorage (stored during checkout)
+        const lastPhone = localStorage.getItem('orderpote_last_phone');
+        if (lastPhone) {
+          const ordersData = await getOrdersByCustomerPhone(lastPhone);
+          setOrders(ordersData);
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    setOrders(mockOrders);
-    setIsLoading(false);
+    fetchOrders();
   }, []);
 
   const getStatusIcon = (status: string) => {

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Search, Filter, Download, Eye, CheckCircle, XCircle, Truck, MoreVertical, Image as ImageIcon } from 'lucide-react';
-import { Order } from '../../lib/schema';
+import { useState } from 'react';
+import { Search, Download, CheckCircle, Truck, Image as ImageIcon } from 'lucide-react';
+import type { Order } from '../../lib/schema';
 
 export default function OrderList() {
   const [orders, setOrders] = useState<Order[]>([
@@ -72,15 +72,6 @@ export default function OrderList() {
     );
   };
 
-  const updateDeliveryDetails = (orderId: string, service: string, trackingId: string) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId
-          ? { ...order, delivery_service: service, tracking_id }
-          : order
-      )
-    );
-  };
 
   const exportOrders = () => {
     // TODO: Implement CSV/Excel export
@@ -211,7 +202,7 @@ export default function OrderList() {
                     <div className="flex gap-2">
                       {order.payment_screenshot_url && (
                         <button
-                          onClick={() => setShowScreenshot(order.payment_screenshot_url)}
+                          onClick={() => setShowScreenshot(order.payment_screenshot_url || null)}
                           className="p-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
                           title="View Screenshot"
                         >

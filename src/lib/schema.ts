@@ -6,9 +6,11 @@
 -- Users table (Sellers)
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
-  phone TEXT UNIQUE NOT NULL,
-  email TEXT UNIQUE,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
   name TEXT NOT NULL,
+  phone TEXT UNIQUE,
+  is_seller BOOLEAN DEFAULT FALSE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -20,6 +22,8 @@ CREATE TABLE IF NOT EXISTS stores (
   name TEXT NOT NULL,
   logo_url TEXT,
   phone TEXT NOT NULL,
+  approval_status TEXT DEFAULT 'pending', -- pending, approved, rejected
+  rejection_reason TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
@@ -140,9 +144,11 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 export interface User {
   id: string;
-  phone: string;
-  email?: string;
+  email: string;
+  password: string;
   name: string;
+  phone?: string;
+  is_seller: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -153,6 +159,8 @@ export interface Store {
   name: string;
   logo_url?: string;
   phone: string;
+  approval_status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
   created_at: string;
   updated_at: string;
 }

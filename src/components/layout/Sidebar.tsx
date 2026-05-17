@@ -1,4 +1,3 @@
-import React from 'react';
 import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 

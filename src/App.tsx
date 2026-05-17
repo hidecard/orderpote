@@ -14,7 +14,8 @@ import ProductLandingPage from './components/buyer/ProductLandingPage';
 import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
 import MyOrders from './components/buyer/MyOrders';
-
+import './index.css'
+import './App.css'
 // Wrapper components to handle route parameters
 function OrderDetailWrapper() {
   const { orderId } = useParams<{ orderId: string }>();

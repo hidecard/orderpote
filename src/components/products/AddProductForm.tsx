@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Upload, X, Plus, Trash2, Link as LinkIcon, QrCode, Share2 } from 'lucide-react';
+import { Upload, X, Plus, Trash2 } from 'lucide-react';
 import { generateSlug, generateId } from '../../lib/utils';
-import { Product, ProductVariant } from '../../lib/schema';
+import type { Product, ProductVariant } from '../../lib/schema';
+import { useAuth } from '../../context/AuthContext';
+import { createProduct, createProductImage, createProductVariant } from '../../lib/db';
 
 export default function AddProductForm() {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -21,7 +24,7 @@ export default function AddProductForm() {
     if (files) {
       // In a real app, you'd upload to a storage service
       // For now, use placeholder URLs
-      const newImages = Array.from(files).map((file, index) => 
+      const newImages = Array.from(files).map((_, index) => 
         `https://via.placeholder.com/400x400?text=Image+${images.length + index + 1}`
       );
       setImages([...images, ...newImages]);
@@ -66,30 +69,53 @@ export default function AddProductForm() {
       return;
     }
 
+    if (!user) {
+      alert('Please log in first');
+      return;
+    }
+
     setIsSubmitting(true);
     const slug = generateSlug(name);
-    const product: Partial<Product> = {
-      id: generateId(),
-      user_id: 'user-123', // TODO: Get from auth context
-      store_id: 'store-123', // TODO: Get from store context
-      name,
-      description,
-      slug,
-      cover_image_url: images[0],
-      is_active: isActive,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
 
-    // TODO: Save to database
-    console.log('Product:', product);
-    console.log('Variants:', variants);
-    console.log('Images:', images);
+    try {
+      // Create product
+      const product = await createProduct({
+        user_id: user.id,
+        store_id: user.id, // Using user_id as store_id for now (TODO: create separate store)
+        name,
+        description,
+        slug,
+        cover_image_url: images[0],
+        is_active: isActive,
+      });
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+      // Create product images
+      for (let i = 0; i < images.length; i++) {
+        await createProductImage({
+          product_id: product.id,
+          image_url: images[i],
+          sort_order: i,
+        });
+      }
+
+      // Create product variants
+      for (const variant of variants) {
+        await createProductVariant({
+          product_id: product.id,
+          name: variant.name || '',
+          price: variant.price || 0,
+          stock: variant.stock || 0,
+        });
+      }
+
       alert(`Product created! Share link: https://orderpote.com/order/${slug}`);
-    }, 1000);
+      window.location.href = '/products';
+    } catch (error) {
+      console.error('Error creating product:', error);
+      alert('Failed to create product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

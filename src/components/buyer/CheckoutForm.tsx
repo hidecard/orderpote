@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, Upload, X, CheckCircle } from 'lucide-react';
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
-import { Product, ProductVariant, Wallet } from '../../lib/schema';
+import type { Product, ProductVariant, Wallet } from '../../lib/schema';
 import { generateId } from '../../lib/utils';
+import { getProductBySlug, getProductVariants, getPrimaryWallet, createOrder } from '../../lib/db';
 
 interface CheckoutFormProps {
   productSlug: string;
@@ -13,7 +14,6 @@ interface CheckoutFormProps {
 export default function CheckoutForm({ productSlug, variantId, quantity }: CheckoutFormProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [primaryWallet, setPrimaryWallet] = useState<Wallet | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -26,55 +26,26 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // TODO: Fetch product, variant, and wallet data from database
-    // Mock data for now
-    const mockProduct: Product = {
-      id: 'prod-1',
-      user_id: 'user-123',
-      store_id: 'store-123',
-      name: 'Premium Cotton T-Shirt',
-      description: 'High-quality cotton t-shirt',
-      slug: productSlug,
-      cover_image_url: 'https://via.placeholder.com/400x400?text=Product',
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    async function fetchCheckoutData() {
+      try {
+        const productData = await getProductBySlug(productSlug);
+        if (!productData) return;
 
-    const mockVariant: ProductVariant = {
-      id: variantId,
-      product_id: 'prod-1',
-      name: 'Size: M, Color: Black',
-      price: 25000,
-      stock: 15,
-      created_at: new Date().toISOString(),
-    };
+        const variantsData = await getProductVariants(productData.id);
+        const variantData = variantsData.find(v => v.id === variantId) || variantsData[0];
+        
+        if (variantData) {
+          const walletData = await getPrimaryWallet(productData.user_id);
+          setProduct(productData);
+          setVariant(variantData);
+          setPrimaryWallet(walletData);
+        }
+      } catch (error) {
+        console.error('Error fetching checkout data:', error);
+      }
+    }
 
-    const mockWallets: Wallet[] = [
-      {
-        id: 'wallet-1',
-        user_id: 'user-123',
-        provider: 'KPay',
-        account_name: 'Store Owner',
-        account_number: '09123456789',
-        is_primary: true,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 'wallet-2',
-        user_id: 'user-123',
-        provider: 'Wave Money',
-        account_name: 'Store Owner',
-        account_number: '09987654321',
-        is_primary: false,
-        created_at: new Date().toISOString(),
-      },
-    ];
-
-    setProduct(mockProduct);
-    setVariant(mockVariant);
-    setWallets(mockWallets);
-    setPrimaryWallet(mockWallets.find((w) => w.is_primary) || mockWallets[0]);
+    fetchCheckoutData();
   }, [productSlug, variantId]);
 
   const handleCopyAccountNumber = () => {
@@ -143,32 +114,33 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
 
     setIsSubmitting(true);
 
-    // TODO: Submit order to database
-    const order = {
-      id: generateId(),
-      product_id: product?.id,
-      variant_id: variant?.id,
-      customer_name: customerName,
-      customer_phone: customerPhone,
-      customer_address: customerAddress,
-      customer_region: customerRegion,
-      customer_township: customerTownship,
-      quantity,
-      total_price: variant ? variant.price * quantity : 0,
-      payment_status: 'pending',
-      delivery_status: 'pending',
-      payment_screenshot_url: screenshotPreview,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    try {
+      const order = await createOrder({
+        product_id: product?.id || '',
+        variant_id: variant?.id,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_address: customerAddress,
+        customer_region: customerRegion,
+        customer_township: customerTownship,
+        quantity,
+        total_price: variant ? variant.price * quantity : 0,
+        payment_status: 'pending',
+        delivery_status: 'pending',
+        payment_screenshot_url: screenshotPreview,
+      });
 
-    console.log('Order submitted:', order);
+      // Save phone to localStorage for MyOrders page
+      localStorage.setItem('orderpote_last_phone', customerPhone);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
       // Redirect to order tracking page
-      window.location.href = `/order/${order.id}`;
-    }, 1500);
+      window.location.href = `/order-tracking/${order.id}`;
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert('Failed to submit order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalPrice = variant ? variant.price * quantity : 0;
