@@ -7,7 +7,12 @@ import { createStore } from '../../lib/db';
 export default function BecomeSeller() {
   const { user, becomeSeller } = useAuth();
   const [storeName, setStoreName] = useState('');
+  const [contactPerson, setContactPerson] = useState(user?.name || '');
   const [storePhone, setStorePhone] = useState('');
+  const [category, setCategory] = useState('');
+  const [address, setAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,7 +25,7 @@ export default function BecomeSeller() {
       return;
     }
 
-    if (!storeName || !storePhone) {
+    if (!storeName || !contactPerson || !storePhone || !category || !address || !description) {
       setError('Please fill in all fields');
       return;
     }
@@ -31,7 +36,12 @@ export default function BecomeSeller() {
       await createStore({
         user_id: user.id,
         name: storeName,
+        logo_url: logoUrl || undefined,
+        contact_person: contactPerson,
         phone: storePhone,
+        category,
+        address,
+        description,
         approval_status: 'pending',
       });
 
@@ -93,16 +103,89 @@ export default function BecomeSeller() {
             />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contact Person *
+              </label>
+              <input
+                type="text"
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Owner or manager name"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Store Phone Number *
+              </label>
+              <input
+                type="tel"
+                value={storePhone}
+                onChange={(e) => setStorePhone(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="09xxxxxxxxx"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Business Category *
+              </label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Fashion, Food, Electronics..."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Logo URL
+              </label>
+              <input
+                type="url"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="https://example.com/logo.png"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Store Phone Number *
+              Shop Address *
             </label>
-            <input
-              type="tel"
-              value={storePhone}
-              onChange={(e) => setStorePhone(e.target.value)}
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="09xxxxxxxxx"
+              placeholder="Full shop or business address"
+              rows={3}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Shop Description *
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="What do you sell? Add notes admin should review."
+              rows={4}
               required
             />
           </div>

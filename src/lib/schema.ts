@@ -21,7 +21,11 @@ CREATE TABLE IF NOT EXISTS stores (
   user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   logo_url TEXT,
+  contact_person TEXT,
   phone TEXT NOT NULL,
+  category TEXT,
+  address TEXT,
+  description TEXT,
   approval_status TEXT DEFAULT 'pending', -- pending, approved, rejected
   rejection_reason TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -158,7 +162,11 @@ export interface Store {
   user_id: string;
   name: string;
   logo_url?: string;
+  contact_person: string;
   phone: string;
+  category: string;
+  address: string;
+  description: string;
   approval_status: 'pending' | 'approved' | 'rejected';
   rejection_reason?: string;
   created_at: string;

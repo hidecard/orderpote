@@ -307,13 +307,33 @@ export async function createStore(store: Omit<Store, 'id' | 'created_at' | 'upda
   const now = new Date().toISOString();
   
   await turso.execute({
-    sql: 'INSERT INTO stores (id, user_id, name, logo_url, phone, approval_status, rejection_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    sql: `
+      INSERT INTO stores (
+        id,
+        user_id,
+        name,
+        logo_url,
+        contact_person,
+        phone,
+        category,
+        address,
+        description,
+        approval_status,
+        rejection_reason,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
     args: [
       id,
       store.user_id,
       store.name,
       store.logo_url || null,
+      store.contact_person,
       store.phone,
+      store.category,
+      store.address,
+      store.description,
       store.approval_status,
       store.rejection_reason || null,
       now,

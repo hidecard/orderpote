@@ -91,12 +91,19 @@ export default function StoreApproval() {
             <div key={store.id} className="bg-white rounded-xl shadow-md p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
-                    <StoreIcon className="w-6 h-6 text-purple-600" />
-                  </div>
+                  {store.logo_url ? (
+                    <img
+                      src={store.logo_url}
+                      alt={`${store.name} logo`}
+                      className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                    />
+                  ) : (
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
+                      <StoreIcon className="w-6 h-6 text-purple-600" />
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{store.name}</h3>
-                    <p className="text-gray-600">Phone: {store.phone}</p>
                     <p className="text-sm text-gray-500 mt-1">
                       Applied: {new Date(store.created_at).toLocaleDateString()}
                     </p>
@@ -120,6 +127,39 @@ export default function StoreApproval() {
                     <XCircle className="w-4 h-4" />
                     Reject
                   </button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-500 mb-1">Contact Person</p>
+                  <p className="font-medium text-gray-900">{store.contact_person || 'Not provided'}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-500 mb-1">Phone</p>
+                  <p className="font-medium text-gray-900">{store.phone}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-500 mb-1">Category</p>
+                  <p className="font-medium text-gray-900">{store.category || 'Not provided'}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-500 mb-1">Logo URL</p>
+                  {store.logo_url ? (
+                    <a href={store.logo_url} target="_blank" rel="noreferrer" className="font-medium text-purple-600 hover:text-purple-700 break-all">
+                      {store.logo_url}
+                    </a>
+                  ) : (
+                    <p className="font-medium text-gray-900">Not provided</p>
+                  )}
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 md:col-span-2">
+                  <p className="text-gray-500 mb-1">Shop Address</p>
+                  <p className="font-medium text-gray-900 whitespace-pre-wrap">{store.address || 'Not provided'}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 md:col-span-2">
+                  <p className="text-gray-500 mb-1">Shop Description</p>
+                  <p className="font-medium text-gray-900 whitespace-pre-wrap">{store.description || 'Not provided'}</p>
                 </div>
               </div>
 
