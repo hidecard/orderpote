@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isAdminEmail } from '../../lib/admin';
 
 export default function RegisterForm() {
   const { register } = useAuth();
@@ -29,6 +30,11 @@ export default function RegisterForm() {
     setIsLoading(true);
     try {
       await register(email, password, name);
+      if (isAdminEmail(email)) {
+        window.location.href = '/admin/store-approvals';
+        return;
+      }
+
       window.location.href = '/become-seller';
     } catch {
       setError('Email already exists');

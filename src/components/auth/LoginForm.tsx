@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getStoreByUserId } from '../../lib/db';
+import { isAdminUser } from '../../lib/admin';
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -17,6 +18,11 @@ export default function LoginForm() {
     setError('');
     try {
       const user = await login(email, password);
+      if (isAdminUser(user)) {
+        window.location.href = '/admin/store-approvals';
+        return;
+      }
+
       const store = await getStoreByUserId(user.id);
 
       if (!user.is_seller || !store) {

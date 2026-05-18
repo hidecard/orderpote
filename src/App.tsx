@@ -21,6 +21,7 @@ import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
 import MyOrders from './components/buyer/MyOrders';
 import { getStoreByUserId } from './lib/db';
+import { isAdminUser } from './lib/admin';
 import type { Store } from './lib/schema';
 import './index.css'
 import './App.css'
@@ -62,6 +63,24 @@ function SellerAccessGate({ children }: { children: ReactNode }) {
 
   return children;
 }
+
+function AdminAccessGate({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdminUser(user)) return <Navigate to="/dashboard" replace />;
+
+  return children;
+}
+
 // Wrapper components to handle route parameters
 function OrderDetailWrapper() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -101,12 +120,15 @@ function App() {
           <Route path="/become-seller" element={<BecomeSeller />} />
           <Route path="/seller-pending" element={<SellerPending />} />
           <Route path="/wallet-setup" element={<WalletSetup />} />
+          <Route path="/admin" element={<Navigate to="/admin/store-approvals" replace />} />
           <Route
             path="/admin/store-approvals"
             element={
-              <DashboardLayout title="Store Approvals">
-                <StoreApproval />
-              </DashboardLayout>
+              <AdminAccessGate>
+                <DashboardLayout title="Store Approvals">
+                  <StoreApproval />
+                </DashboardLayout>
+              </AdminAccessGate>
             }
           />
           
