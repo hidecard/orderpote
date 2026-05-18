@@ -2,27 +2,38 @@ import { DollarSign, ShoppingCart, Clock, Eye } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
 import { getDashboardStats, getSalesData, getTopProducts, getProductViews } from '../../lib/db';
+import { useAuth } from '../../context/AuthContext';
+
+type SalesDataPoint = { name: string; sales: number };
+type TopProductDataPoint = { name: string; value: number; color: string };
+type ProductViewDataPoint = { name: string; views: number; orders: number };
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [kpiData, setKpiData] = useState({
     totalRevenue: 0,
     totalOrders: 0,
     pendingOrders: 0,
     totalViews: 0,
   });
-  const [salesData, setSalesData] = useState<any[]>([]);
-  const [topProductsData, setTopProductsData] = useState<any[]>([]);
-  const [productViews, setProductViews] = useState<any[]>([]);
+  const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
+  const [topProductsData, setTopProductsData] = useState<TopProductDataPoint[]>([]);
+  const [productViews, setProductViews] = useState<ProductViewDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchDashboardData() {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const [stats, sales, topProducts, views] = await Promise.all([
-          getDashboardStats('user-123'), // TODO: Get actual user ID from auth
-          getSalesData(7),
-          getTopProducts(5),
-          getProductViews(10),
+          getDashboardStats(user.id),
+          getSalesData(user.id, 7),
+          getTopProducts(user.id, 5),
+          getProductViews(user.id, 10),
         ]);
 
         setKpiData(stats);
@@ -37,7 +48,7 @@ export default function Dashboard() {
     }
 
     fetchDashboardData();
-  }, []);
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -65,7 +76,7 @@ export default function Dashboard() {
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-          <p className="text-sm text-green-600 mt-2">+12.5% from last month</p>
+          <p className="text-sm text-gray-500 mt-2">Paid orders only</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6">
@@ -78,7 +89,7 @@ export default function Dashboard() {
               <ShoppingCart className="w-6 h-6 text-blue-600" />
             </div>
           </div>
-          <p className="text-sm text-green-600 mt-2">+8.2% from last month</p>
+          <p className="text-sm text-gray-500 mt-2">All orders from your products</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-6">
@@ -104,7 +115,7 @@ export default function Dashboard() {
               <Eye className="w-6 h-6 text-green-600" />
             </div>
           </div>
-          <p className="text-sm text-green-600 mt-2">+15.3% from last month</p>
+          <p className="text-sm text-gray-500 mt-2">Tracked product page visits</p>
         </div>
       </div>
 
@@ -177,7 +188,7 @@ export default function Dashboard() {
                   </td>
                   <td className="py-3 px-4">
                     <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
-                      {((product.orders / product.views) * 100).toFixed(1)}%
+                      {product.views === 0 ? '0.0' : ((product.orders / product.views) * 100).toFixed(1)}%
                     </span>
                   </td>
                 </tr>

@@ -20,6 +20,15 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return rowAs<Product>(result.rows[0]);
 }
 
+export async function getProductById(productId: string): Promise<Product | null> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM products WHERE id = ?',
+    args: [productId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<Product>(result.rows[0]);
+}
+
 export async function getProductImages(productId: string): Promise<ProductImage[]> {
   const result = await turso.execute({
     sql: 'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order',
@@ -34,6 +43,15 @@ export async function getProductVariants(productId: string): Promise<ProductVari
     args: [productId],
   });
   return rowsAs<ProductVariant>(result.rows);
+}
+
+export async function getProductVariantById(variantId: string): Promise<ProductVariant | null> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM product_variants WHERE id = ?',
+    args: [variantId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<ProductVariant>(result.rows[0]);
 }
 
 export async function getProductReviews(productId: string): Promise<Review[]> {
@@ -194,10 +212,17 @@ export async function getDashboardStats(userId: string) {
   };
 }
 
-export async function getSalesData(days: number = 7) {
+export async function getSalesData(userId: string, days: number = 7) {
   const result = await turso.execute({
-    sql: `SELECT DATE(created_at) as date, SUM(total_price) as sales FROM orders WHERE payment_status = ? AND created_at >= date('now', '-' || ? || ' days') GROUP BY DATE(created_at) ORDER BY date`,
-    args: ['paid', days],
+    sql: `
+      SELECT DATE(o.created_at) as date, SUM(o.total_price) as sales
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ? AND o.created_at >= date('now', '-' || ? || ' days')
+      GROUP BY DATE(o.created_at)
+      ORDER BY date
+    `,
+    args: ['paid', userId, days],
   });
   
   return rowsAs<SalesRow>(result.rows).map((row) => ({
@@ -206,10 +231,18 @@ export async function getSalesData(days: number = 7) {
   }));
 }
 
-export async function getTopProducts(limit: number = 5) {
+export async function getTopProducts(userId: string, limit: number = 5) {
   const result = await turso.execute({
-    sql: `SELECT p.name, COUNT(o.id) as value FROM products p LEFT JOIN orders o ON p.id = o.product_id GROUP BY p.id ORDER BY value DESC LIMIT ?`,
-    args: [limit],
+    sql: `
+      SELECT p.name, COUNT(o.id) as value
+      FROM products p
+      LEFT JOIN orders o ON p.id = o.product_id
+      WHERE p.user_id = ?
+      GROUP BY p.id
+      ORDER BY value DESC
+      LIMIT ?
+    `,
+    args: [userId, limit],
   });
   
   const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe'];
@@ -220,10 +253,19 @@ export async function getTopProducts(limit: number = 5) {
   }));
 }
 
-export async function getProductViews(limit: number = 10) {
+export async function getProductViews(userId: string, limit: number = 10) {
   const result = await turso.execute({
-    sql: `SELECT p.name, COUNT(pv.id) as views, COUNT(o.id) as orders FROM products p LEFT JOIN page_views pv ON p.id = pv.product_id LEFT JOIN orders o ON p.id = o.product_id GROUP BY p.id ORDER BY views DESC LIMIT ?`,
-    args: [limit],
+    sql: `
+      SELECT p.name, COUNT(DISTINCT pv.id) as views, COUNT(DISTINCT o.id) as orders
+      FROM products p
+      LEFT JOIN page_views pv ON p.id = pv.product_id
+      LEFT JOIN orders o ON p.id = o.product_id
+      WHERE p.user_id = ?
+      GROUP BY p.id
+      ORDER BY views DESC
+      LIMIT ?
+    `,
+    args: [userId, limit],
   });
   
   return rowsAs<ProductViewRow>(result.rows).map((row) => ({
