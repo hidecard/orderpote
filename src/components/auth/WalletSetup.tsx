@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Plus, Trash2, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Wallet } from '../../lib/schema';
+import { createWallet, getWalletsByUserId } from '../../lib/db';
 
 const WALLET_PROVIDERS = [
   'KPay',
@@ -16,15 +18,41 @@ const WALLET_PROVIDERS = [
 
 export default function WalletSetup() {
   const { user } = useAuth();
+  const [savedWallets, setSavedWallets] = useState<Wallet[]>([]);
   const [wallets, setWallets] = useState<Partial<Wallet>[]>([]);
   const [currentWallet, setCurrentWallet] = useState({
     provider: WALLET_PROVIDERS[0],
     account_name: '',
     account_number: '',
   });
-  const [storeName, setStoreName] = useState('');
-  const [storePhone, setStorePhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchWallets() {
+      if (!user) {
+        setIsFetching(false);
+        return;
+      }
+
+      try {
+        const walletData = await getWalletsByUserId(user.id);
+        if (isMounted) setSavedWallets(walletData);
+      } catch (error) {
+        console.error('Error fetching wallets:', error);
+      } finally {
+        if (isMounted) setIsFetching(false);
+      }
+    }
+
+    fetchWallets();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const addWallet = () => {
     if (currentWallet.account_name && currentWallet.account_number) {
@@ -34,7 +62,7 @@ export default function WalletSetup() {
           ...currentWallet,
           id: `wallet-${Date.now()}`,
           user_id: user?.id || '',
-          is_primary: wallets.length === 0,
+          is_primary: savedWallets.length === 0 && wallets.length === 0,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -64,23 +92,50 @@ export default function WalletSetup() {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      alert('Please log in first');
+      return;
+    }
+
     if (wallets.length === 0) {
       alert('Please add at least one wallet');
       return;
     }
-    if (!storeName || !storePhone) {
-      alert('Please fill in store details');
-      return;
-    }
 
     setIsLoading(true);
-    // TODO: Save wallets and store settings to database
-    setTimeout(() => {
-      window.location.href = '/dashboard';
-    }, 1000);
+    try {
+      const createdWallets: Wallet[] = [];
+      for (const wallet of wallets) {
+        const createdWallet = await createWallet({
+          user_id: user.id,
+          provider: wallet.provider || WALLET_PROVIDERS[0],
+          account_name: wallet.account_name || '',
+          account_number: wallet.account_number || '',
+          is_primary: Boolean(wallet.is_primary),
+        });
+        createdWallets.push(createdWallet);
+      }
+
+      setSavedWallets([...savedWallets, ...createdWallets]);
+      setWallets([]);
+      alert('Wallet saved');
+    } catch (error) {
+      console.error('Error saving wallets:', error);
+      alert('Failed to save wallets. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isFetching) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
@@ -91,42 +146,35 @@ export default function WalletSetup() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Store Settings */}
-          <div className="border-b border-gray-200 pb-6">
-            <h3 className="text-lg font-semibold mb-4">Store Information</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Store Name
-                </label>
-                <input
-                  type="text"
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Your Store Name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Store Phone
-                </label>
-                <input
-                  type="tel"
-                  value={storePhone}
-                  onChange={(e) => setStorePhone(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="09xxxxxxxxx"
-                  required
-                />
+          {savedWallets.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Saved Wallets</h3>
+              <div className="space-y-3">
+                {savedWallets.map((wallet) => (
+                  <div
+                    key={wallet.id}
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white"
+                  >
+                    <div className="flex items-center gap-3">
+                      {wallet.is_primary && <Check className="w-5 h-5 text-green-600" />}
+                      <div>
+                        <p className="font-semibold">{wallet.provider}</p>
+                        <p className="text-sm text-gray-600">{wallet.account_name}</p>
+                        <p className="text-sm text-gray-500">{wallet.account_number}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+                      {wallet.is_primary ? 'Primary' : 'Saved'}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Wallet Setup */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Payment Methods</h3>
+            <h3 className="text-lg font-semibold mb-4">Add Payment Method</h3>
             
             {/* Add Wallet Form */}
             <div className="bg-gray-50 p-4 rounded-lg mb-4">
@@ -232,10 +280,10 @@ export default function WalletSetup() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || wallets.length === 0}
             className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50"
           >
-            {isLoading ? 'Saving...' : 'Complete Setup'}
+            {isLoading ? 'Saving...' : 'Save New Wallets'}
           </button>
         </form>
       </div>

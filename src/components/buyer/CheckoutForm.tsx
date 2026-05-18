@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { Copy, Upload, X, CheckCircle } from 'lucide-react';
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
 import type { Product, ProductVariant, Wallet } from '../../lib/schema';
@@ -22,6 +23,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -33,14 +35,14 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         const variantsData = await getProductVariants(productData.id);
         const variantData = variantsData.find(v => v.id === variantId) || variantsData[0];
         
-        if (variantData) {
-          const walletData = await getPrimaryWallet(productData.user_id);
-          setProduct(productData);
-          setVariant(variantData);
-          setPrimaryWallet(walletData);
-        }
+        const walletData = await getPrimaryWallet(productData.user_id);
+        setProduct(productData);
+        setVariant(variantData || null);
+        setPrimaryWallet(walletData);
       } catch (error) {
         console.error('Error fetching checkout data:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -55,7 +57,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Client-side compression
@@ -104,8 +106,18 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!product || !variant) {
+      alert('Product is not ready for checkout');
+      return;
+    }
+
+    if (!primaryWallet) {
+      alert('Seller has not set up a payment wallet yet');
+      return;
+    }
+
     if (!customerName || !customerPhone || !customerRegion || !customerTownship || !customerAddress || !paymentScreenshot) {
       alert('Please fill in all fields and upload payment screenshot');
       return;
@@ -115,8 +127,8 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
 
     try {
       const order = await createOrder({
-        product_id: product?.id || '',
-        variant_id: variant?.id,
+        product_id: product.id,
+        variant_id: variant.id,
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_address: customerAddress,
@@ -144,10 +156,32 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
 
   const totalPrice = variant ? variant.price * quantity : 0;
 
-  if (!product || !variant || !primaryWallet) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!product || !variant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Checkout Unavailable</h1>
+          <p className="text-gray-600">This product is not ready for checkout.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!primaryWallet) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-md p-6 max-w-md text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Payment Not Ready</h1>
+          <p className="text-gray-600">The seller has not set up a payment wallet yet. Please contact the seller before ordering.</p>
+        </div>
       </div>
     );
   }
@@ -164,7 +198,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
           <h2 className="font-semibold mb-3">Order Summary</h2>
           <div className="flex gap-4">
             <img
-              src={product.cover_image_url}
+              src={product.cover_image_url || 'https://via.placeholder.com/400x400?text=Product'}
               alt={product.name}
               className="w-20 h-20 object-cover rounded-lg"
             />

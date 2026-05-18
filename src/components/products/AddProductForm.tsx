@@ -4,7 +4,7 @@ import { Copy, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { generateSlug, generateId } from '../../lib/utils';
 import type { ProductVariant } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
-import { createProduct, createProductImage, createProductVariant, getStoreByUserId } from '../../lib/db';
+import { createProduct, createProductImage, createProductVariant, getPrimaryWallet, getStoreByUserId } from '../../lib/db';
 
 export default function AddProductForm() {
   const { user } = useAuth();
@@ -21,14 +21,42 @@ export default function AddProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdLink, setCreatedLink] = useState('');
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const readImageAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const maxSize = 900;
+          let { width, height } = img;
+
+          if (width > height && width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        };
+        img.onerror = reject;
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      // In a real app, you'd upload to a storage service
-      // For now, use placeholder URLs
-      const newImages = Array.from(files).map((_, index) => 
-        `https://via.placeholder.com/400x400?text=Image+${images.length + index + 1}`
-      );
+      const newImages = await Promise.all(Array.from(files).map(readImageAsDataUrl));
       setImages([...images, ...newImages]);
     }
   };
@@ -94,6 +122,13 @@ export default function AddProductForm() {
       const store = await getStoreByUserId(user.id);
       if (!store || store.approval_status !== 'approved') {
         alert('Your shop must be approved before publishing products');
+        return;
+      }
+
+      const wallet = await getPrimaryWallet(user.id);
+      if (!wallet) {
+        alert('Please set up a payment wallet before publishing products');
+        window.location.href = '/wallet-setup';
         return;
       }
 

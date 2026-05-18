@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
 
@@ -14,7 +14,7 @@ export default function Sidebar() {
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: Package, label: 'Products', path: '/products' },
         { icon: ShoppingCart, label: 'Orders', path: '/orders' },
-        { icon: Settings, label: 'Settings', path: '/settings' },
+        { icon: Wallet, label: 'Payment Wallet', path: '/wallet-setup' },
       ];
 
   return (

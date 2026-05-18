@@ -415,6 +415,20 @@ export async function getAllOrders(): Promise<Order[]> {
   return rowsAs<Order>(result.rows);
 }
 
+export async function getOrdersBySellerId(userId: string): Promise<Order[]> {
+  const result = await turso.execute({
+    sql: `
+      SELECT o.*
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE p.user_id = ?
+      ORDER BY o.created_at DESC
+    `,
+    args: [userId],
+  });
+  return rowsAs<Order>(result.rows);
+}
+
 // Update order payment status
 export async function updateOrderPaymentStatus(orderId: string, status: 'pending' | 'paid' | 'failed'): Promise<void> {
   await turso.execute({

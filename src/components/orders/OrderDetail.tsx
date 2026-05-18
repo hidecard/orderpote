@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { ArrowLeft, CheckCircle, XCircle, Truck, Package, Image as ImageIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, CheckCircle, Image as ImageIcon, Package, Truck, XCircle } from 'lucide-react';
 import type { Order } from '../../lib/schema';
+import { getOrderById, updateOrderDeliveryStatus, updateOrderPaymentStatus } from '../../lib/db';
 
 interface OrderDetailProps {
   orderId: string;
@@ -8,40 +9,54 @@ interface OrderDetailProps {
 }
 
 export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
-  const [order, setOrder] = useState<Order>({
-    id: orderId,
-    product_id: 'prod-1',
-    customer_name: 'John Doe',
-    customer_phone: '09123456789',
-    customer_address: '123 Main St',
-    customer_region: 'Yangon',
-    customer_township: 'Bahan',
-    quantity: 2,
-    total_price: 50000,
-    payment_status: 'pending',
-    delivery_status: 'pending',
-    payment_screenshot_url: 'https://via.placeholder.com/400x600?text=Screenshot',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  const [order, setOrder] = useState<Order | null>(null);
   const [deliveryService, setDeliveryService] = useState('');
-  const [trackingId, setTrackingId] = useState(order.tracking_id || '');
+  const [trackingId, setTrackingId] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [showScreenshot, setShowScreenshot] = useState(false);
 
-  const updatePaymentStatus = (status: 'pending' | 'paid' | 'failed') => {
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchOrder() {
+      try {
+        const orderData = await getOrderById(orderId);
+        if (!isMounted) return;
+
+        setOrder(orderData);
+        setDeliveryService(orderData?.delivery_service || '');
+        setTrackingId(orderData?.tracking_id || '');
+      } catch (error) {
+        console.error('Error fetching order:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    fetchOrder();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [orderId]);
+
+  const updatePaymentStatus = async (status: 'pending' | 'paid' | 'failed') => {
+    if (!order) return;
+    await updateOrderPaymentStatus(order.id, status);
     setOrder({ ...order, payment_status: status });
   };
 
-  const updateDeliveryStatus = (status: 'pending' | 'preparing' | 'shipped' | 'delivered') => {
-    setOrder({ ...order, delivery_status: status });
+  const updateDeliveryStatus = async (status: 'pending' | 'preparing' | 'shipped' | 'delivered') => {
+    if (!order) return;
+    await updateOrderDeliveryStatus(order.id, status, deliveryService, trackingId);
+    setOrder({ ...order, delivery_status: status, delivery_service: deliveryService, tracking_id: trackingId });
   };
 
-  const saveDeliveryDetails = () => {
-    setOrder({
-      ...order,
-      delivery_service: deliveryService,
-      tracking_id: trackingId,
-    });
-    alert('Delivery details saved!');
+  const saveDeliveryDetails = async () => {
+    if (!order) return;
+    await updateOrderDeliveryStatus(order.id, order.delivery_status, deliveryService, trackingId);
+    setOrder({ ...order, delivery_service: deliveryService, tracking_id: trackingId });
+    alert('Delivery details saved');
   };
 
   const getStatusColor = (status: string) => {
@@ -56,18 +71,37 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="p-6">
+        <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6">
+          <ArrowLeft className="w-5 h-5" />
+          Back to Orders
+        </button>
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Not Found</h1>
+          <p className="text-gray-600">This order may have been removed.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6"
-      >
+      <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6">
         <ArrowLeft className="w-5 h-5" />
         Back to Orders
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Order Information */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Order Information</h2>
           <div className="space-y-4">
@@ -101,30 +135,30 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
           </div>
         </div>
 
-        {/* Status and Actions */}
         <div className="space-y-6">
-          {/* Payment Status */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Payment Status</h2>
-            <div className="flex items-center justify-between mb-4">
-              <span className={`px-4 py-2 rounded-full font-semibold ${getStatusColor(order.payment_status)}`}>
-                {order.payment_status.toUpperCase()}
-              </span>
-            </div>
+            <span className={`inline-block px-4 py-2 rounded-full font-semibold mb-4 ${getStatusColor(order.payment_status)}`}>
+              {order.payment_status.toUpperCase()}
+            </span>
 
             {order.payment_screenshot_url && (
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">Payment Screenshot</p>
-                <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowScreenshot(true)}
+                  className="relative block w-full"
+                >
                   <img
                     src={order.payment_screenshot_url}
                     alt="Payment Screenshot"
-                    className="w-full h-48 object-cover rounded-lg cursor-pointer"
+                    className="w-full h-48 object-cover rounded-lg"
                   />
-                  <button className="absolute top-2 right-2 bg-white p-2 rounded-full shadow hover:bg-gray-100">
+                  <span className="absolute top-2 right-2 bg-white p-2 rounded-full shadow">
                     <ImageIcon className="w-4 h-4" />
-                  </button>
-                </div>
+                  </span>
+                </button>
               </div>
             )}
 
@@ -148,14 +182,11 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
             )}
           </div>
 
-          {/* Delivery Status */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Delivery Status</h2>
-            <div className="flex items-center justify-between mb-4">
-              <span className={`px-4 py-2 rounded-full font-semibold ${getStatusColor(order.delivery_status)}`}>
-                {order.delivery_status.toUpperCase()}
-              </span>
-            </div>
+            <span className={`inline-block px-4 py-2 rounded-full font-semibold mb-4 ${getStatusColor(order.delivery_status)}`}>
+              {order.delivery_status.toUpperCase()}
+            </span>
 
             <div className="space-y-3">
               <button
@@ -185,50 +216,54 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
             </div>
           </div>
 
-          {/* Delivery Details */}
-          {(order.delivery_status === 'preparing' || order.delivery_status === 'shipped') && (
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Delivery Details</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Service
-                  </label>
-                  <select
-                    value={deliveryService}
-                    onChange={(e) => setDeliveryService(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">Select service...</option>
-                    <option value="Royal Express">Royal Express</option>
-                    <option value="Shop.com.mm">Shop.com.mm</option>
-                    <option value="KMD">KMD</option>
-                    <option value="Sun Express">Sun Express</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tracking ID
-                  </label>
-                  <input
-                    type="text"
-                    value={trackingId}
-                    onChange={(e) => setTrackingId(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter tracking number"
-                  />
-                </div>
-                <button
-                  onClick={saveDeliveryDetails}
-                  className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Save Details
-                </button>
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">Delivery Details</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Service</label>
+                <input
+                  type="text"
+                  value={deliveryService}
+                  onChange={(e) => setDeliveryService(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Royal Express, KMD, etc."
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tracking ID</label>
+                <input
+                  type="text"
+                  value={trackingId}
+                  onChange={(e) => setTrackingId(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter tracking number"
+                />
+              </div>
+              <button
+                onClick={saveDeliveryDetails}
+                className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Save Details
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
+
+      {showScreenshot && order.payment_screenshot_url && (
+        <div
+          className="fixed inset-0 bg-black/75 flex items-center justify-center z-50"
+          onClick={() => setShowScreenshot(false)}
+        >
+          <div className="max-w-4xl max-h-[90vh] p-4">
+            <img
+              src={order.payment_screenshot_url}
+              alt="Payment Screenshot"
+              className="max-w-full max-h-[90vh] object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

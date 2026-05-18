@@ -53,6 +53,27 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     fetchProductData();
   }, [slug]);
 
+  useEffect(() => {
+    if (!product) return;
+
+    document.title = `${product.name} | OrderPote`;
+
+    const setMeta = (property: string, content: string) => {
+      let element = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute('property', property);
+        document.head.appendChild(element);
+      }
+      element.content = content;
+    };
+
+    setMeta('og:title', product.name);
+    setMeta('og:description', product.description || 'Order this product on OrderPote');
+    setMeta('og:url', window.location.href);
+    if (product.cover_image_url) setMeta('og:image', product.cover_image_url);
+  }, [product]);
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -64,7 +85,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
   const handleBuyNow = () => {
     if (!selectedVariant) return;
     // Navigate to checkout page
-    window.location.href = `/checkout?product=${slug}&variant=${selectedVariant.id}&quantity=${quantity}`;
+    window.location.href = `/checkout?product=${encodeURIComponent(slug)}&variant=${encodeURIComponent(selectedVariant.id)}&quantity=${quantity}`;
   };
 
   const handleShare = async () => {
@@ -232,7 +253,8 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
               </button>
               <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
               <button
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity(Math.min(selectedVariant?.stock || quantity, quantity + 1))}
+                disabled={!selectedVariant || quantity >= selectedVariant.stock}
                 className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100"
               >
                 +
