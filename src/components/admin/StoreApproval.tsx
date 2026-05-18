@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Store, Clock, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CheckCircle, XCircle, Store as StoreIcon, Clock, AlertCircle } from 'lucide-react';
 import type { Store } from '../../lib/schema';
 import { getPendingStores, updateStoreApprovalStatus } from '../../lib/db';
 
@@ -11,19 +11,25 @@ export default function StoreApproval() {
   const [showRejectDialog, setShowRejectDialog] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPendingStores();
-  }, []);
+    let isMounted = true;
 
-  const fetchPendingStores = async () => {
-    try {
-      const stores = await getPendingStores();
-      setPendingStores(stores);
-    } catch (error) {
-      console.error('Error fetching pending stores:', error);
-    } finally {
-      setIsLoading(false);
+    async function fetchPendingStores() {
+      try {
+        const stores = await getPendingStores();
+        if (isMounted) setPendingStores(stores);
+      } catch (error) {
+        console.error('Error fetching pending stores:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     }
-  };
+
+    fetchPendingStores();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleApprove = async (storeId: string) => {
     setProcessingId(storeId);
@@ -86,7 +92,7 @@ export default function StoreApproval() {
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full">
-                    <Store className="w-6 h-6 text-purple-600" />
+                    <StoreIcon className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{store.name}</h3>

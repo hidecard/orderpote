@@ -1,5 +1,14 @@
 import turso from './turso';
-import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User } from './schema';
+import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store } from './schema';
+
+const rowAs = <T>(row: unknown): T => row as T;
+const rowsAs = <T>(rows: unknown): T[] => rows as T[];
+
+type CountRow = { count: number | string };
+type RevenueRow = { total: number | string | null };
+type SalesRow = { date: string; sales: number | string | null };
+type TopProductRow = { name: string; value: number | string };
+type ProductViewRow = { name: string; views: number | string; orders: number | string };
 
 // Product queries
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -8,7 +17,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     args: [slug],
   });
   if (result.rows.length === 0) return null;
-  return result.rows[0] as Product;
+  return rowAs<Product>(result.rows[0]);
 }
 
 export async function getProductImages(productId: string): Promise<ProductImage[]> {
@@ -16,7 +25,7 @@ export async function getProductImages(productId: string): Promise<ProductImage[
     sql: 'SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order',
     args: [productId],
   });
-  return result.rows as ProductImage[];
+  return rowsAs<ProductImage>(result.rows);
 }
 
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
@@ -24,7 +33,7 @@ export async function getProductVariants(productId: string): Promise<ProductVari
     sql: 'SELECT * FROM product_variants WHERE product_id = ?',
     args: [productId],
   });
-  return result.rows as ProductVariant[];
+  return rowsAs<ProductVariant>(result.rows);
 }
 
 export async function getProductReviews(productId: string): Promise<Review[]> {
@@ -32,7 +41,7 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
     sql: 'SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC',
     args: [productId],
   });
-  return result.rows as Review[];
+  return rowsAs<Review>(result.rows);
 }
 
 // Order queries
@@ -42,7 +51,7 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
     args: [orderId],
   });
   if (result.rows.length === 0) return null;
-  return result.rows[0] as Order;
+  return rowAs<Order>(result.rows[0]);
 }
 
 export async function getOrdersByCustomerPhone(phone: string): Promise<Order[]> {
@@ -50,7 +59,7 @@ export async function getOrdersByCustomerPhone(phone: string): Promise<Order[]> 
     sql: 'SELECT * FROM orders WHERE customer_phone = ? ORDER BY created_at DESC',
     args: [phone],
   });
-  return result.rows as Order[];
+  return rowsAs<Order>(result.rows);
 }
 
 export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<Order> {
@@ -90,7 +99,7 @@ export async function getPrimaryWallet(userId: string): Promise<Wallet | null> {
     args: [userId],
   });
   if (result.rows.length === 0) return null;
-  return result.rows[0] as Wallet;
+  return rowAs<Wallet>(result.rows[0]);
 }
 
 export async function getWalletsByUserId(userId: string): Promise<Wallet[]> {
@@ -98,7 +107,7 @@ export async function getWalletsByUserId(userId: string): Promise<Wallet[]> {
     sql: 'SELECT * FROM wallets WHERE user_id = ?',
     args: [userId],
   });
-  return result.rows as Wallet[];
+  return rowsAs<Wallet>(result.rows);
 }
 
 // User queries
@@ -108,7 +117,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     args: [email],
   });
   if (result.rows.length === 0) return null;
-  return result.rows[0] as User;
+  return rowAs<User>(result.rows[0]);
 }
 
 export async function createUser(user: Omit<User, 'id' | 'created_at' | 'updated_at'>): Promise<User> {
@@ -133,30 +142,55 @@ export async function updateUserSellerStatus(userId: string, isSeller: boolean):
 // Dashboard queries
 export async function getDashboardStats(userId: string) {
   const revenueResult = await turso.execute({
-    sql: 'SELECT COALESCE(SUM(total_price), 0) as total FROM orders WHERE payment_status = ?',
-    args: ['paid'],
+    sql: `
+      SELECT COALESCE(SUM(o.total_price), 0) as total
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ?
+    `,
+    args: ['paid', userId],
   });
   
   const ordersResult = await turso.execute({
-    sql: 'SELECT COUNT(*) as count FROM orders',
-    args: [],
+    sql: `
+      SELECT COUNT(*) as count
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE p.user_id = ?
+    `,
+    args: [userId],
   });
   
   const pendingResult = await turso.execute({
-    sql: 'SELECT COUNT(*) as count FROM orders WHERE payment_status = ?',
-    args: ['pending'],
+    sql: `
+      SELECT COUNT(*) as count
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ?
+    `,
+    args: ['pending', userId],
   });
   
   const viewsResult = await turso.execute({
-    sql: 'SELECT COUNT(*) as count FROM page_views',
-    args: [],
+    sql: `
+      SELECT COUNT(*) as count
+      FROM page_views pv
+      INNER JOIN products p ON pv.product_id = p.id
+      WHERE p.user_id = ?
+    `,
+    args: [userId],
   });
+
+  const revenue = rowAs<RevenueRow>(revenueResult.rows[0]);
+  const orders = rowAs<CountRow>(ordersResult.rows[0]);
+  const pending = rowAs<CountRow>(pendingResult.rows[0]);
+  const views = rowAs<CountRow>(viewsResult.rows[0]);
   
   return {
-    totalRevenue: Number(revenueResult.rows[0].total),
-    totalOrders: Number(ordersResult.rows[0].count),
-    pendingOrders: Number(pendingResult.rows[0].count),
-    totalViews: Number(viewsResult.rows[0].count),
+    totalRevenue: Number(revenue.total),
+    totalOrders: Number(orders.count),
+    pendingOrders: Number(pending.count),
+    totalViews: Number(views.count),
   };
 }
 
@@ -166,7 +200,7 @@ export async function getSalesData(days: number = 7) {
     args: ['paid', days],
   });
   
-  return result.rows.map((row: any) => ({
+  return rowsAs<SalesRow>(result.rows).map((row) => ({
     name: new Date(row.date).toLocaleDateString('en-US', { weekday: 'short' }),
     sales: Number(row.sales),
   }));
@@ -179,7 +213,7 @@ export async function getTopProducts(limit: number = 5) {
   });
   
   const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe'];
-  return result.rows.map((row: any, index: number) => ({
+  return rowsAs<TopProductRow>(result.rows).map((row, index) => ({
     name: row.name,
     value: Number(row.value),
     color: colors[index % colors.length],
@@ -192,7 +226,7 @@ export async function getProductViews(limit: number = 10) {
     args: [limit],
   });
   
-  return result.rows.map((row: any) => ({
+  return rowsAs<ProductViewRow>(result.rows).map((row) => ({
     name: row.name,
     views: Number(row.views),
     orders: Number(row.orders),
@@ -264,7 +298,7 @@ export async function getProductsByUserId(userId: string): Promise<Product[]> {
     sql: 'SELECT * FROM products WHERE user_id = ? ORDER BY created_at DESC',
     args: [userId],
   });
-  return result.rows as Product[];
+  return rowsAs<Product>(result.rows);
 }
 
 // Create store
@@ -297,7 +331,7 @@ export async function getStoreByUserId(userId: string): Promise<Store | null> {
     args: [userId],
   });
   if (result.rows.length === 0) return null;
-  return result.rows[0] as Store;
+  return rowAs<Store>(result.rows[0]);
 }
 
 // Update store approval status
@@ -314,7 +348,7 @@ export async function getPendingStores(): Promise<Store[]> {
     sql: 'SELECT * FROM stores WHERE approval_status = ?',
     args: ['pending'],
   });
-  return result.rows as Store[];
+  return rowsAs<Store>(result.rows);
 }
 
 // Create wallet
@@ -344,7 +378,7 @@ export async function getAllOrders(): Promise<Order[]> {
     sql: 'SELECT * FROM orders ORDER BY created_at DESC',
     args: [],
   });
-  return result.rows as Order[];
+  return rowsAs<Order>(result.rows);
 }
 
 // Update order payment status

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Wallet } from '../../lib/schema';
-import { createStore, createWallet } from '../../lib/db';
 
 const WALLET_PROVIDERS = [
   'KPay',

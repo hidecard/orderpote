@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, X, Plus, Trash2 } from 'lucide-react';
 import { generateSlug, generateId } from '../../lib/utils';
-import type { Product, ProductVariant } from '../../lib/schema';
+import type { ProductVariant } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
 import { createProduct, createProductImage, createProductVariant } from '../../lib/db';
 

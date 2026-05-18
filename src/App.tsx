@@ -1,21 +1,67 @@
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Routes, Route, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import RegisterForm from './components/auth/RegisterForm';
 import LoginForm from './components/auth/LoginForm';
 import WalletSetup from './components/auth/WalletSetup';
+import BecomeSeller from './components/auth/BecomeSeller';
+import SellerPending from './components/auth/SellerPending';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './components/dashboard/Dashboard';
 import ProductList from './components/products/ProductList';
 import AddProductForm from './components/products/AddProductForm';
 import OrderList from './components/orders/OrderList';
 import OrderDetail from './components/orders/OrderDetail';
+import StoreApproval from './components/admin/StoreApproval';
 import ProductLandingPage from './components/buyer/ProductLandingPage';
 import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
 import MyOrders from './components/buyer/MyOrders';
+import { getStoreByUserId } from './lib/db';
+import type { Store } from './lib/schema';
 import './index.css'
 import './App.css'
+
+function SellerAccessGate({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const [store, setStore] = useState<Store | null>(null);
+  const [isCheckingStore, setIsCheckingStore] = useState(true);
+
+  useEffect(() => {
+    async function checkStore() {
+      if (!user) {
+        setIsCheckingStore(false);
+        return;
+      }
+
+      try {
+        const currentStore = await getStoreByUserId(user.id);
+        setStore(currentStore);
+      } finally {
+        setIsCheckingStore(false);
+      }
+    }
+
+    checkStore();
+  }, [user]);
+
+  if (isLoading || isCheckingStore) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.is_seller || !store) return <Navigate to="/become-seller" replace />;
+  if (store.approval_status !== 'approved') return <Navigate to="/seller-pending" replace />;
+
+  return children;
+}
 // Wrapper components to handle route parameters
 function OrderDetailWrapper() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -52,47 +98,67 @@ function App() {
           <Route path="/login" element={<LoginForm />} />
           
           {/* Onboarding */}
+          <Route path="/become-seller" element={<BecomeSeller />} />
+          <Route path="/seller-pending" element={<SellerPending />} />
           <Route path="/wallet-setup" element={<WalletSetup />} />
+          <Route
+            path="/admin/store-approvals"
+            element={
+              <DashboardLayout title="Store Approvals">
+                <StoreApproval />
+              </DashboardLayout>
+            }
+          />
           
           {/* Seller Dashboard Routes */}
           <Route
             path="/dashboard"
             element={
-              <DashboardLayout title="Dashboard">
-                <Dashboard />
-              </DashboardLayout>
+              <SellerAccessGate>
+                <DashboardLayout title="Dashboard">
+                  <Dashboard />
+                </DashboardLayout>
+              </SellerAccessGate>
             }
           />
           <Route
             path="/products"
             element={
-              <DashboardLayout title="Products">
-                <ProductList />
-              </DashboardLayout>
+              <SellerAccessGate>
+                <DashboardLayout title="Products">
+                  <ProductList />
+                </DashboardLayout>
+              </SellerAccessGate>
             }
           />
           <Route
             path="/products/add"
             element={
-              <DashboardLayout title="Add Product">
-                <AddProductForm />
-              </DashboardLayout>
+              <SellerAccessGate>
+                <DashboardLayout title="Add Product">
+                  <AddProductForm />
+                </DashboardLayout>
+              </SellerAccessGate>
             }
           />
           <Route
             path="/orders"
             element={
-              <DashboardLayout title="Orders">
-                <OrderList />
-              </DashboardLayout>
+              <SellerAccessGate>
+                <DashboardLayout title="Orders">
+                  <OrderList />
+                </DashboardLayout>
+              </SellerAccessGate>
             }
           />
           <Route
             path="/orders/:orderId"
             element={
-              <DashboardLayout title="Order Details">
-                <OrderDetailWrapper />
-              </DashboardLayout>
+              <SellerAccessGate>
+                <DashboardLayout title="Order Details">
+                  <OrderDetailWrapper />
+                </DashboardLayout>
+              </SellerAccessGate>
             }
           />
           

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getStoreByUserId } from '../../lib/db';
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -9,14 +11,21 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     try {
-      await login(email, password);
-      window.location.href = '/dashboard';
-    } catch (error) {
+      const user = await login(email, password);
+      const store = await getStoreByUserId(user.id);
+
+      if (!user.is_seller || !store) {
+        window.location.href = '/become-seller';
+        return;
+      }
+
+      window.location.href = store.approval_status === 'approved' ? '/dashboard' : '/seller-pending';
+    } catch {
       setError('Invalid email or password');
       setIsLoading(false);
     }

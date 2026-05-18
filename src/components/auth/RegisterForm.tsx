@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -11,7 +12,7 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -28,8 +29,8 @@ export default function RegisterForm() {
     setIsLoading(true);
     try {
       await register(email, password, name);
-      window.location.href = '/dashboard';
-    } catch (error) {
+      window.location.href = '/become-seller';
+    } catch {
       setError('Email already exists');
       setIsLoading(false);
     }

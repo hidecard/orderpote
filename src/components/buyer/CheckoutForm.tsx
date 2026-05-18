@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Copy, Upload, X, CheckCircle } from 'lucide-react';
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
 import type { Product, ProductVariant, Wallet } from '../../lib/schema';
-import { generateId } from '../../lib/utils';
 import { getProductBySlug, getProductVariants, getPrimaryWallet, createOrder } from '../../lib/db';
 
 interface CheckoutFormProps {

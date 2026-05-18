@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { Store, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { createStore } from '../../lib/db';
@@ -10,7 +11,7 @@ export default function BecomeSeller() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -37,8 +38,7 @@ export default function BecomeSeller() {
       // Update user to seller status
       await becomeSeller();
 
-      alert('Your shop application has been submitted for approval. You will be notified once it is approved.');
-      window.location.href = '/dashboard';
+      window.location.href = '/seller-pending';
     } catch (error) {
       console.error('Error creating seller account:', error);
       setError('Failed to submit application. Please try again.');
@@ -117,7 +117,7 @@ export default function BecomeSeller() {
 
           <button
             type="button"
-            onClick={() => window.location.href = '/dashboard'}
+            onClick={() => window.location.href = '/'}
             className="w-full text-gray-600 py-2 hover:text-gray-800"
           >
             Cancel
