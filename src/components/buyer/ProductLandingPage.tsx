@@ -67,6 +67,22 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     window.location.href = `/checkout?product=${slug}&variant=${selectedVariant.id}&quantity=${quantity}`;
   };
 
+  const handleShare = async () => {
+    const link = window.location.href;
+
+    if (navigator.share) {
+      await navigator.share({
+        title: product?.name,
+        text: product?.description || 'Check out this product',
+        url: link,
+      });
+      return;
+    }
+
+    await navigator.clipboard.writeText(link);
+    alert('Product link copied');
+  };
+
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : 0;
@@ -111,7 +127,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
         <div className="bg-white rounded-xl shadow-md overflow-hidden mb-4">
           <div className="relative aspect-square">
             <img
-              src={images[currentImageIndex]}
+              src={images[currentImageIndex] || product.cover_image_url || 'https://via.placeholder.com/800x800?text=Product'}
               alt={product.name}
               className="w-full h-full object-cover"
             />
@@ -235,7 +251,10 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
           </button>
 
           {/* Share Button */}
-          <button className="w-full mt-3 border border-gray-300 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+          <button
+            onClick={handleShare}
+            className="w-full mt-3 border border-gray-300 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          >
             <Share2 className="w-5 h-5" />
             Share Product
           </button>

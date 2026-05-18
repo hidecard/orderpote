@@ -301,6 +301,20 @@ export async function getProductsByUserId(userId: string): Promise<Product[]> {
   return rowsAs<Product>(result.rows);
 }
 
+export async function updateProductActiveStatus(productId: string, isActive: boolean): Promise<void> {
+  await turso.execute({
+    sql: 'UPDATE products SET is_active = ?, updated_at = ? WHERE id = ?',
+    args: [isActive ? 1 : 0, new Date().toISOString(), productId],
+  });
+}
+
+export async function deleteProduct(productId: string): Promise<void> {
+  await turso.execute({
+    sql: 'DELETE FROM products WHERE id = ?',
+    args: [productId],
+  });
+}
+
 // Create store
 export async function createStore(store: Omit<Store, 'id' | 'created_at' | 'updated_at'>): Promise<Store> {
   const id = `store-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

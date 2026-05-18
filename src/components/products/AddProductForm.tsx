@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Upload, X, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
+import { Copy, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { generateSlug, generateId } from '../../lib/utils';
 import type { ProductVariant } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
-import { createProduct, createProductImage, createProductVariant } from '../../lib/db';
+import { createProduct, createProductImage, createProductVariant, getStoreByUserId } from '../../lib/db';
 
 export default function AddProductForm() {
   const { user } = useAuth();
@@ -18,8 +19,9 @@ export default function AddProductForm() {
   });
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdLink, setCreatedLink] = useState('');
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       // In a real app, you'd upload to a storage service
@@ -62,10 +64,21 @@ export default function AddProductForm() {
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const copyCreatedLink = async () => {
+    if (!createdLink) return;
+    await navigator.clipboard.writeText(createdLink);
+    alert('Product link copied');
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || images.length === 0) {
       alert('Please fill in product name and add at least one image');
+      return;
+    }
+
+    if (variants.length === 0) {
+      alert('Please add at least one product variant with price and stock');
       return;
     }
 
@@ -75,13 +88,19 @@ export default function AddProductForm() {
     }
 
     setIsSubmitting(true);
-    const slug = generateSlug(name);
+    const slug = `${generateSlug(name)}-${Date.now().toString(36)}`;
 
     try {
+      const store = await getStoreByUserId(user.id);
+      if (!store || store.approval_status !== 'approved') {
+        alert('Your shop must be approved before publishing products');
+        return;
+      }
+
       // Create product
       const product = await createProduct({
         user_id: user.id,
-        store_id: user.id, // Using user_id as store_id for now (TODO: create separate store)
+        store_id: store.id,
         name,
         description,
         slug,
@@ -108,8 +127,10 @@ export default function AddProductForm() {
         });
       }
 
-      alert(`Product created! Share link: https://orderpote.com/order/${slug}`);
-      window.location.href = '/products';
+      const link = `${window.location.origin}/order/${product.slug}`;
+      setCreatedLink(link);
+      await navigator.clipboard.writeText(link);
+      alert(`Product created and link copied:\n${link}`);
     } catch (error) {
       console.error('Error creating product:', error);
       alert('Failed to create product. Please try again.');
@@ -121,6 +142,35 @@ export default function AddProductForm() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Add New Product</h1>
+
+      {createdLink && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+          <p className="font-semibold text-green-900 mb-2">Product published</p>
+          <div className="flex flex-col md:flex-row gap-3">
+            <input
+              value={createdLink}
+              readOnly
+              className="flex-1 px-4 py-3 border border-green-200 rounded-lg bg-white text-sm"
+            />
+            <button
+              type="button"
+              onClick={copyCreatedLink}
+              className="flex items-center justify-center gap-2 bg-green-600 text-white px-5 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Copy className="w-4 h-4" />
+              Copy Link
+            </button>
+            <a
+              href={createdLink}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center border border-green-300 text-green-700 px-5 py-3 rounded-lg hover:bg-green-100 transition-colors"
+            >
+              Open
+            </a>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Basic Information */}
@@ -343,6 +393,7 @@ export default function AddProductForm() {
           </button>
           <button
             type="button"
+            onClick={() => window.location.href = '/products'}
             className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Cancel
