@@ -1,7 +1,7 @@
 import { DollarSign, ShoppingCart, Clock, Eye } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
-import { getDashboardStats, getSalesData, getTopProducts, getProductViews } from '../../lib/db';
+import { getDashboardStats, getSalesData, getTopProducts, getProductViews, getLeastSellingProducts, getLowStockVariants } from '../../lib/db';
 import { useAuth } from '../../context/AuthContext';
 
 type SalesDataPoint = { name: string; sales: number };
@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
   const [topProductsData, setTopProductsData] = useState<TopProductDataPoint[]>([]);
   const [productViews, setProductViews] = useState<ProductViewDataPoint[]>([]);
+  const [leastProducts, setLeastProducts] = useState<TopProductDataPoint[]>([]);
+  const [lowStock, setLowStock] = useState<{ variant_id: string; product_name: string; variant_name: string; stock: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,12 +36,16 @@ export default function Dashboard() {
           getSalesData(user.id, 7),
           getTopProducts(user.id, 5),
           getProductViews(user.id, 10),
+          getLeastSellingProducts(user.id, 5),
+          getLowStockVariants(user.id, 5),
         ]);
 
         setKpiData(stats);
         setSalesData(sales);
         setTopProductsData(topProducts);
         setProductViews(views);
+        setLeastProducts((await getLeastSellingProducts(user.id, 5)));
+        setLowStock((await getLowStockVariants(user.id, 5)));
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -195,6 +201,58 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Seller Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Top Seller</h2>
+          {topProductsData[0] ? (
+            <div>
+              <p className="text-sm text-gray-600">{topProductsData[0].name}</p>
+              <p className="text-2xl font-bold text-gray-900">{topProductsData[0].value} orders</p>
+            </div>
+          ) : (
+            <p className="text-gray-500">No sales yet</p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Least Selling</h2>
+          {leastProducts.length === 0 ? (
+            <p className="text-gray-500">No data</p>
+          ) : (
+            <ul className="space-y-2">
+              {leastProducts.map((p, i) => (
+                <li key={i} className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700">{p.name}</span>
+                  <span className="text-sm text-gray-500">{p.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-semibold mb-4">Low Stock</h2>
+          {lowStock.length === 0 ? (
+            <p className="text-gray-500">No variants nearing out of stock</p>
+          ) : (
+            <ul className="space-y-2">
+              {lowStock.map((v) => (
+                <li key={v.variant_id} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{v.product_name}</p>
+                    <p className="text-xs text-gray-500">{v.variant_name}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-sm ${v.stock === 0 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {v.stock}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

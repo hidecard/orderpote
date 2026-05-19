@@ -9,6 +9,8 @@ type RevenueRow = { total: number | string | null };
 type SalesRow = { date: string; sales: number | string | null };
 type TopProductRow = { name: string; value: number | string };
 type ProductViewRow = { name: string; views: number | string; orders: number | string };
+type LowStockRow = { variant_id: string; product_name: string; variant_name: string; stock: number | string };
+export type LowStockVariant = { variant_id: string; product_name: string; variant_name: string; stock: number };
 
 // Product queries
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -279,6 +281,48 @@ export async function getTopProducts(userId: string, limit: number = 5) {
     name: row.name,
     value: Number(row.value),
     color: colors[index % colors.length],
+  }));
+}
+
+export async function getLeastSellingProducts(userId: string, limit: number = 5) {
+  const result = await turso.execute({
+    sql: `
+      SELECT p.name, COUNT(o.id) as value
+      FROM products p
+      LEFT JOIN orders o ON p.id = o.product_id AND o.payment_status = 'paid'
+      WHERE p.user_id = ?
+      GROUP BY p.id
+      ORDER BY value ASC
+      LIMIT ?
+    `,
+    args: [userId, limit],
+  });
+
+  return rowsAs<TopProductRow>(result.rows).map((row) => ({
+    name: row.name,
+    value: Number(row.value),
+    color: '#ccc',
+  }));
+}
+
+export async function getLowStockVariants(userId: string, threshold: number = 5): Promise<LowStockVariant[]> {
+  const result = await turso.execute({
+    sql: `
+      SELECT v.id as variant_id, p.name as product_name, v.name as variant_name, v.stock
+      FROM product_variants v
+      INNER JOIN products p ON v.product_id = p.id
+      WHERE p.user_id = ? AND v.stock <= ?
+      ORDER BY v.stock ASC
+      LIMIT 20
+    `,
+    args: [userId, threshold],
+  });
+
+  return rowsAs<LowStockRow>(result.rows).map((r) => ({
+    variant_id: String(r.variant_id),
+    product_name: String(r.product_name),
+    variant_name: String(r.variant_name),
+    stock: Number(r.stock),
   }));
 }
 
