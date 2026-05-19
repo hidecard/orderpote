@@ -291,7 +291,7 @@ export interface Review {
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'new_order' | 'new_product' | 'product_update' | 'inventory_update';
+  type: 'new_order' | 'new_product' | 'product_update' | 'inventory_update' | 'plan_assigned';
   title: string;
   message: string;
   is_read: boolean;

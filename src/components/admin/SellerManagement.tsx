@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getSellers, getPlans, getSellerSubscriptionWithPlan, assignPlanToSeller, cancelSubscription, createPlan } from '../../lib/db';
 import type { User, Plan, SubscriptionWithPlan } from '../../lib/schema';
 
