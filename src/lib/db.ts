@@ -1,5 +1,5 @@
 import turso from './turso';
-import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification } from './schema';
+import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan } from './schema';
 
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
@@ -241,6 +241,109 @@ export async function getDashboardStats(userId: string) {
     pendingOrders: Number(pending.count),
     totalViews: Number(views.count),
   };
+}
+
+// Admin: list sellers
+export async function getSellers(): Promise<User[]> {
+  const result = await turso.execute({ sql: 'SELECT * FROM users WHERE is_seller = 1 ORDER BY created_at DESC' });
+  return rowsAs<User>(result.rows);
+}
+
+// Plans & Subscriptions
+export async function createPlan(plan: Omit<Plan, 'id' | 'created_at'>): Promise<Plan> {
+  const id = `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date().toISOString();
+
+  await turso.execute({
+    sql: 'INSERT INTO plans (id, name, price_per_month, description, trial_days, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [id, plan.name, plan.price_per_month || 0, plan.description || null, plan.trial_days || 0, now],
+  });
+
+  return { ...plan, id, created_at: now } as Plan;
+}
+
+export async function getPlans(): Promise<Plan[]> {
+  const result = await turso.execute({ sql: 'SELECT * FROM plans ORDER BY created_at DESC' });
+  return rowsAs<Plan>(result.rows);
+}
+
+export async function getPlanById(planId: string): Promise<Plan | null> {
+  const result = await turso.execute({ sql: 'SELECT * FROM plans WHERE id = ?', args: [planId] });
+  if (result.rows.length === 0) return null;
+  return rowAs<Plan>(result.rows[0]);
+}
+
+export async function createSubscription(subscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>): Promise<Subscription> {
+  const id = `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date().toISOString();
+
+  await turso.execute({
+    sql: 'INSERT INTO subscriptions (id, user_id, plan_id, starts_at, ends_at, is_active, is_trial, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, subscription.user_id, subscription.plan_id, subscription.starts_at, subscription.ends_at, subscription.is_active ? 1 : 0, subscription.is_trial ? 1 : 0, now, now],
+  });
+
+  return { ...subscription, id, created_at: now, updated_at: now } as Subscription;
+}
+
+export async function assignPlanToSeller(userId: string, planId: string, trialDays?: number): Promise<Subscription> {
+  const now = new Date();
+  const startsAt = now.toISOString();
+
+  let ends = new Date(now);
+  if (trialDays && trialDays > 0) {
+    ends.setDate(ends.getDate() + trialDays);
+  } else {
+    // default monthly subscription
+    ends.setMonth(ends.getMonth() + 1);
+  }
+
+  const subscription = await createSubscription({
+    user_id: userId,
+    plan_id: planId,
+    starts_at: startsAt,
+    ends_at: ends.toISOString(),
+    is_active: true,
+    is_trial: !!(trialDays && trialDays > 0),
+  });
+
+  // Notify seller
+  await createNotification({
+    user_id: userId,
+    type: 'plan_assigned',
+    title: 'Subscription Assigned',
+    message: `You have been assigned the "${(await getPlanById(planId))?.name || 'plan'}" plan.`,
+    is_read: false,
+    related_id: subscription.id,
+  });
+
+  return subscription;
+}
+
+export async function getSellerSubscription(userId: string): Promise<Subscription | null> {
+  const result = await turso.execute({ sql: 'SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 1', args: [userId] });
+  if (result.rows.length === 0) return null;
+  return rowAs<Subscription>(result.rows[0]);
+}
+
+export async function getSellerSubscriptionWithPlan(userId: string): Promise<SubscriptionWithPlan | null> {
+  const result = await turso.execute({
+    sql: `SELECT s.*, p.name as plan_name, p.price_per_month as plan_price_per_month
+          FROM subscriptions s
+          LEFT JOIN plans p ON s.plan_id = p.id
+          WHERE s.user_id = ? AND s.is_active = 1
+          ORDER BY s.created_at DESC LIMIT 1`,
+    args: [userId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<SubscriptionWithPlan>(result.rows[0]);
+}
+
+export async function updateSubscriptionEnds(subscriptionId: string, newEndsAt: string): Promise<void> {
+  await turso.execute({ sql: 'UPDATE subscriptions SET ends_at = ?, updated_at = ? WHERE id = ?', args: [newEndsAt, new Date().toISOString(), subscriptionId] });
+}
+
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  await turso.execute({ sql: 'UPDATE subscriptions SET is_active = 0, updated_at = ? WHERE id = ?', args: [new Date().toISOString(), subscriptionId] });
 }
 
 export async function getSalesData(userId: string, days: number = 7) {

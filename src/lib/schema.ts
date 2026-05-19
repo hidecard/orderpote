@@ -218,6 +218,32 @@ export interface ProductImage {
   created_at: string;
 }
 
+export interface Plan {
+  id: string;
+  name: string;
+  price_per_month: number;
+  description?: string;
+  trial_days?: number;
+  created_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  starts_at: string;
+  ends_at: string;
+  is_active: boolean;
+  is_trial: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriptionWithPlan extends Subscription {
+  plan_name?: string;
+  plan_price_per_month?: number;
+}
+
 export interface ProductVariant {
   id: string;
   product_id: string;

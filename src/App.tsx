@@ -17,6 +17,7 @@ import EditProductForm from './components/products/EditProductForm';
 import OrderList from './components/orders/OrderList';
 import OrderDetail from './components/orders/OrderDetail';
 import StoreApproval from './components/admin/StoreApproval';
+import SellerManagement from './components/admin/SellerManagement';
 import NotificationsPage from './components/notifications/NotificationsPage';
 import ProductTrafficPage from './pages/ProductTraffic';
 import ProductLandingPage from './components/buyer/ProductLandingPage';
@@ -147,6 +148,16 @@ function App() {
               <AdminAccessGate>
                 <DashboardLayout title="Store Approvals">
                   <StoreApproval />
+                </DashboardLayout>
+              </AdminAccessGate>
+            }
+          />
+          <Route
+            path="/admin/sellers"
+            element={
+              <AdminAccessGate>
+                <DashboardLayout title="Seller Management">
+                  <SellerManagement />
                 </DashboardLayout>
               </AdminAccessGate>
             }

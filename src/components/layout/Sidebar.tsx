@@ -30,6 +30,7 @@ export default function Sidebar() {
     ? [
         { icon: Bell, label: 'Notifications', path: '/notifications' },
         { icon: ShieldCheck, label: 'Store Approvals', path: '/admin/store-approvals' },
+        { icon: Package, label: 'Seller Management', path: '/admin/sellers' },
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
