@@ -8,7 +8,7 @@ type CountRow = { count: number | string };
 type RevenueRow = { total: number | string | null };
 type SalesRow = { date: string; sales: number | string | null };
 type TopProductRow = { name: string; value: number | string };
-type ProductViewRow = { name: string; views: number | string; orders: number | string };
+type ProductViewRow = { id: string; slug: string; name: string; views: number | string; orders: number | string };
 type LowStockRow = { variant_id: string; product_name: string; variant_name: string; stock: number | string };
 export type LowStockVariant = { variant_id: string; product_name: string; variant_name: string; stock: number };
 
@@ -329,7 +329,7 @@ export async function getLowStockVariants(userId: string, threshold: number = 5)
 export async function getProductViews(userId: string, limit: number = 10) {
   const result = await turso.execute({
     sql: `
-      SELECT p.name, COUNT(DISTINCT pv.id) as views, COUNT(DISTINCT o.id) as orders
+      SELECT p.id, p.slug, p.name, COUNT(DISTINCT pv.id) as views, COUNT(DISTINCT o.id) as orders
       FROM products p
       LEFT JOIN page_views pv ON p.id = pv.product_id
       LEFT JOIN orders o ON p.id = o.product_id
@@ -342,9 +342,11 @@ export async function getProductViews(userId: string, limit: number = 10) {
   });
   
   return rowsAs<ProductViewRow>(result.rows).map((row) => ({
-    name: row.name,
-    views: Number(row.views),
-    orders: Number(row.orders),
+    id: String((row as any).id),
+    slug: String((row as any).slug),
+    name: String((row as any).name),
+    views: Number((row as any).views),
+    orders: Number((row as any).orders),
   }));
 }
 
