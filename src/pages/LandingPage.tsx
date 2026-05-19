@@ -1,4 +1,4 @@
-import { ShoppingBag, Zap, Shield, BarChart, CheckCircle, ArrowRight, Smartphone, Clock, MousePointer2, Share2, CreditCard } from 'lucide-react';
+import { ShoppingBag, Shield, BarChart, CheckCircle, ArrowRight, Smartphone, Clock, MousePointer2, Share2, CreditCard } from 'lucide-react';
 
 export default function LandingPage() {
   return (
