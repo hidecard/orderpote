@@ -13,9 +13,11 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './components/dashboard/Dashboard';
 import ProductList from './components/products/ProductList';
 import AddProductForm from './components/products/AddProductForm';
+import EditProductForm from './components/products/EditProductForm';
 import OrderList from './components/orders/OrderList';
 import OrderDetail from './components/orders/OrderDetail';
 import StoreApproval from './components/admin/StoreApproval';
+import NotificationsPage from './components/notifications/NotificationsPage';
 import ProductLandingPage from './components/buyer/ProductLandingPage';
 import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
@@ -78,6 +80,22 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdminUser(user)) return <Navigate to="/dashboard" replace />;
+
+  return children;
+}
+
+function PrivateAccessGate({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
 
   return children;
 }
@@ -165,6 +183,16 @@ function App() {
             }
           />
           <Route
+            path="/products/edit/:productId"
+            element={
+              <SellerAccessGate>
+                <DashboardLayout title="Edit Product">
+                  <EditProductForm />
+                </DashboardLayout>
+              </SellerAccessGate>
+            }
+          />
+          <Route
             path="/orders"
             element={
               <SellerAccessGate>
@@ -182,6 +210,16 @@ function App() {
                   <OrderDetailWrapper />
                 </DashboardLayout>
               </SellerAccessGate>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <PrivateAccessGate>
+                <DashboardLayout title="Notifications">
+                  <NotificationsPage />
+                </DashboardLayout>
+              </PrivateAccessGate>
             }
           />
           <Route

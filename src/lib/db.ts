@@ -382,10 +382,8 @@ export async function updateProductVariantStock(variantId: string, newStock: num
     args: [newStock, variantId],
   });
 
-  // Get product to find seller user_id
   const product = await getProductById(variant.product_id);
   if (product) {
-    // Create notification for inventory update
     await createNotification({
       user_id: product.user_id,
       type: 'inventory_update',
@@ -394,6 +392,51 @@ export async function updateProductVariantStock(variantId: string, newStock: num
       is_read: false,
       related_id: variantId,
     });
+  }
+}
+
+export async function updateProductVariant(
+  variantId: string,
+  updates: Partial<Pick<ProductVariant, 'name' | 'price' | 'stock'>>
+): Promise<void> {
+  const variant = await getProductVariantById(variantId);
+  if (!variant) return;
+
+  const updateFields: string[] = [];
+  const args: (string | number | null)[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.price !== undefined) {
+    updateFields.push('price = ?');
+    args.push(updates.price);
+  }
+  if (updates.stock !== undefined) {
+    updateFields.push('stock = ?');
+    args.push(updates.stock);
+  }
+
+  if (updateFields.length === 0) return;
+
+  await turso.execute({
+    sql: `UPDATE product_variants SET ${updateFields.join(', ')} WHERE id = ?`,
+    args: [...args, variantId],
+  });
+
+  if (updates.stock !== undefined && updates.stock !== variant.stock) {
+    const product = await getProductById(variant.product_id);
+    if (product) {
+      await createNotification({
+        user_id: product.user_id,
+        type: 'inventory_update',
+        title: 'Inventory Updated',
+        message: `Stock for product variant "${variant.name}" has been updated from ${variant.stock} to ${updates.stock}`,
+        is_read: false,
+        related_id: variantId,
+      });
+    }
   }
 }
 
@@ -418,7 +461,7 @@ export async function updateProduct(productId: string, updates: Partial<Omit<Pro
   if (!product) return;
 
   const updateFields: string[] = [];
-  const args: any[] = [];
+  const args: (string | number | null)[] = [];
 
   if (updates.name !== undefined) {
     updateFields.push('name = ?');
@@ -463,6 +506,20 @@ export async function deleteProduct(productId: string): Promise<void> {
   await turso.execute({
     sql: 'DELETE FROM products WHERE id = ?',
     args: [productId],
+  });
+}
+
+export async function deleteProductImage(imageId: string): Promise<void> {
+  await turso.execute({
+    sql: 'DELETE FROM product_images WHERE id = ?',
+    args: [imageId],
+  });
+}
+
+export async function deleteProductVariant(variantId: string): Promise<void> {
+  await turso.execute({
+    sql: 'DELETE FROM product_variants WHERE id = ?',
+    args: [variantId],
   });
 }
 
@@ -530,7 +587,7 @@ export async function updateStoreApprovalStatus(storeId: string, status: 'pendin
 // Update store details
 export async function updateStore(storeId: string, store: Partial<Omit<Store, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'approval_status'>>): Promise<void> {
   const updates: string[] = [];
-  const args: any[] = [];
+  const args: (string | number | null)[] = [];
 
   if (store.name !== undefined) {
     updates.push('name = ?');

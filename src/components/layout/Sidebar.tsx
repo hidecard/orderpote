@@ -28,31 +28,25 @@ export default function Sidebar() {
 
   const menuItems = isAdmin
     ? [
+        { icon: Bell, label: 'Notifications', path: '/notifications' },
         { icon: ShieldCheck, label: 'Store Approvals', path: '/admin/store-approvals' },
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: Package, label: 'Products', path: '/products' },
         { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+        { icon: Bell, label: 'Notifications', path: '/notifications' },
         { icon: StoreIcon, label: 'Store Settings', path: '/store-settings' },
         { icon: Wallet, label: 'Payment Wallet', path: '/wallet-setup' },
       ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-4">
-      <div className="mb-8 flex items-center justify-between">
+    <aside className="relative flex w-full max-w-xs min-h-0 flex-col border-r border-gray-200 bg-white p-4 md:h-screen md:w-64 md:sticky md:top-0 md:self-start">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-purple-600">OrderPote</h1>
-        {unreadCount > 0 && (
-          <div className="relative">
-            <Bell className="w-6 h-6 text-purple-600" />
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          </div>
-        )}
       </div>
       
-      <nav className="space-y-2">
+      <nav className="flex-1 overflow-y-auto pr-1 space-y-2">
         {menuItems.map((item) => (
           <a
             key={item.path}
@@ -60,27 +54,32 @@ export default function Sidebar() {
             className="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-colors"
           >
             <item.icon className="w-5 h-5" />
-            <span>{item.label}</span>
+            <span className="flex-1">{item.label}</span>
+            {item.path === '/notifications' && unreadCount > 0 && (
+              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </a>
         ))}
       </nav>
 
-      <div className="absolute bottom-4 left-4 right-4">
+      <div className="mt-6 pt-6 border-t border-gray-200">
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors w-full"
+          className="flex w-full items-center justify-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-red-600 transition-colors hover:bg-red-100"
         >
           <LogOut className="w-5 h-5" />
           <span>Logout</span>
         </button>
-      </div>
 
-      {user && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600">{user.name}</p>
-          <p className="text-xs text-gray-500">{user.phone}</p>
-        </div>
-      )}
+        {user && (
+          <div className="mt-4 space-y-1 text-center text-sm text-gray-600">
+            <p className="font-medium text-gray-800">{user.name}</p>
+            <p className="text-xs text-gray-500">{user.phone}</p>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

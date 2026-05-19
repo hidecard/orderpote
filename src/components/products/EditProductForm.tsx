@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Copy, Upload, X, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Upload, X, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import type { Product, ProductVariant, ProductImage } from '../../lib/schema';
-import { useAuth } from '../../context/AuthContext';
 import { 
   getProductById, 
   getProductImages, 
@@ -13,14 +12,13 @@ import {
   createProductImage,
   deleteProductImage,
   createProductVariant,
-  updateProductVariantStock,
+  updateProductVariant,
   deleteProductVariant
 } from '../../lib/db';
 
 export default function EditProductForm() {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
   const [existingVariants, setExistingVariants] = useState<ProductVariant[]>([]);
@@ -207,7 +205,6 @@ export default function EditProductForm() {
       // Update existing variants and create new ones
       for (const variant of updatedVariants) {
         if (variant.id.startsWith('new-')) {
-          // Create new variant
           await createProductVariant({
             product_id: productId,
             name: variant.name,
@@ -215,10 +212,27 @@ export default function EditProductForm() {
             stock: variant.stock,
           });
         } else {
-          // Update existing variant stock
-          const existing = existingVariants.find(v => v.id === variant.id);
-          if (existing && existing.stock !== variant.stock) {
-            await updateProductVariantStock(variant.id, variant.stock);
+          const existing = existingVariants.find((v) => v.id === variant.id);
+          if (existing) {
+            const variantUpdates: Partial<{
+              name: string;
+              price: number;
+              stock: number;
+            }> = {};
+
+            if (existing.name !== variant.name) {
+              variantUpdates.name = variant.name;
+            }
+            if (existing.price !== variant.price) {
+              variantUpdates.price = variant.price;
+            }
+            if (existing.stock !== variant.stock) {
+              variantUpdates.stock = variant.stock;
+            }
+
+            if (Object.keys(variantUpdates).length > 0) {
+              await updateProductVariant(variant.id, variantUpdates);
+            }
           }
         }
       }
@@ -496,7 +510,7 @@ export default function EditProductForm() {
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
             </label>
             <span className="text-sm font-medium text-gray-700">
               {isActive ? 'Active' : 'Inactive'}
