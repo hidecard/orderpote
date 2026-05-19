@@ -571,6 +571,12 @@ export async function updateProduct(productId: string, updates: Partial<Omit<Pro
 }
 
 export async function deleteProduct(productId: string): Promise<void> {
+  // Remove dependent rows first to avoid FK/constraint issues
+  await turso.execute({ sql: 'DELETE FROM product_variants WHERE product_id = ?', args: [productId] });
+  await turso.execute({ sql: 'DELETE FROM product_images WHERE product_id = ?', args: [productId] });
+  await turso.execute({ sql: 'DELETE FROM page_views WHERE product_id = ?', args: [productId] });
+  await turso.execute({ sql: 'DELETE FROM orders WHERE product_id = ?', args: [productId] });
+
   await turso.execute({
     sql: 'DELETE FROM products WHERE id = ?',
     args: [productId],

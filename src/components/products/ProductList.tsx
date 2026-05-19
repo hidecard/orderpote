@@ -70,8 +70,16 @@ export default function ProductList() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
-    await deleteProduct(id);
-    setProducts((currentProducts) => currentProducts.filter((product) => product.id !== id));
+    try {
+      setIsLoading(true);
+      await deleteProduct(id);
+      setProducts((currentProducts) => currentProducts.filter((product) => product.id !== id));
+    } catch (err) {
+      console.error('Failed to delete product', err);
+      alert('Failed to delete product. See console for details.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {

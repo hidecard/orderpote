@@ -251,12 +251,15 @@ export default function EditProductForm() {
     if (!product || !confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
 
     try {
+      setIsSubmitting(true);
       await deleteProduct(product.id);
       alert('Product deleted successfully');
       navigate('/products');
     } catch (error) {
       console.error('Error deleting product:', error);
       alert('Failed to delete product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
