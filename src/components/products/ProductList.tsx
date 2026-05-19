@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ExternalLink, Link as LinkIcon, Package, Plus, Search, Trash2 } from 'lucide-react';
+import { ExternalLink, Link as LinkIcon, Package, Plus, Search, Trash2, Edit } from 'lucide-react';
 import type { Product } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
 import { deleteProduct, getProductsByUserId, updateProductActiveStatus } from '../../lib/db';
@@ -173,6 +173,13 @@ export default function ProductList() {
               </div>
 
               <div className="flex gap-2">
+                <button
+                  onClick={() => window.location.href = `/products/edit/${product.id}`}
+                  className="flex-1 px-3 py-2 border border-purple-300 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors text-sm flex items-center justify-center gap-1"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit
+                </button>
                 <button
                   onClick={() => toggleStatus(product)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"

@@ -144,6 +144,19 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
+
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  related_id TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 */
 
 export interface User {
@@ -245,5 +258,16 @@ export interface Review {
   customer_name: string;
   rating: number;
   comment?: string;
+  created_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'new_order' | 'new_product' | 'product_update' | 'inventory_update';
+  title: string;
+  message: string;
+  is_read: boolean;
+  related_id?: string;
   created_at: string;
 }

@@ -7,7 +7,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="OrderPote Logo" className="h-12 w-auto" />
+            <img src="/logo.png" alt="OrderPote Logo" className="h-20 w-auto" />
           </div>
           <div className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-base font-medium text-gray-700 hover:text-[#1a7f8c] transition-colors">လုပ်ဆောင်ချက်များ</a>
@@ -254,7 +254,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
             <div className="flex flex-col items-center md:items-start gap-4">
-              <img src="/logo.png" alt="OrderPote Logo" className="h-12 w-auto" />
+              <img src="/logo.png" alt="OrderPote Logo" className="h-20 w-auto" />
               <p className="text-gray-500 font-medium max-w-xs text-center md:text-left">မြန်မာရောင်းချသူများအတွက် အကောင်းဆုံး အော်ဒါစီမံခန့်ခွဲမှုစနစ်</p>
             </div>
             <div className="flex flex-wrap justify-center gap-8 text-base font-bold text-gray-600">

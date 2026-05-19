@@ -20,6 +20,7 @@ import ProductLandingPage from './components/buyer/ProductLandingPage';
 import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
 import MyOrders from './components/buyer/MyOrders';
+import StoreSettings from './components/dashboard/StoreSettings';
 import { getStoreByUserId } from './lib/db';
 import { isAdminUser } from './lib/admin';
 import type { Store } from './lib/schema';
@@ -179,6 +180,16 @@ function App() {
               <SellerAccessGate>
                 <DashboardLayout title="Order Details">
                   <OrderDetailWrapper />
+                </DashboardLayout>
+              </SellerAccessGate>
+            }
+          />
+          <Route
+            path="/store-settings"
+            element={
+              <SellerAccessGate>
+                <DashboardLayout title="Store Settings">
+                  <StoreSettings />
                 </DashboardLayout>
               </SellerAccessGate>
             }

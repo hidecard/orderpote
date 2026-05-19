@@ -1,5 +1,5 @@
 import turso from './turso';
-import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store } from './schema';
+import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification } from './schema';
 
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
@@ -84,6 +84,21 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
   const id = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
   
+  // Check and decrement stock if variant_id is provided
+  if (order.variant_id) {
+    const variant = await getProductVariantById(order.variant_id);
+    if (!variant) {
+      throw new Error('Product variant not found');
+    }
+    
+    if (variant.stock < order.quantity) {
+      throw new Error('Insufficient stock');
+    }
+    
+    // Decrement stock
+    await updateProductVariantStock(order.variant_id, variant.stock - order.quantity);
+  }
+  
   await turso.execute({
     sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
@@ -106,6 +121,20 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
       now,
     ],
   });
+  
+  // Get product to find seller user_id
+  const product = await getProductById(order.product_id);
+  if (product) {
+    // Create notification for seller
+    await createNotification({
+      user_id: product.user_id,
+      type: 'new_order',
+      title: 'New Order Received',
+      message: `New order from ${order.customer_name} for ${order.quantity} item(s)`,
+      is_read: false,
+      related_id: id,
+    });
+  }
   
   return { ...order, id, created_at: now, updated_at: now };
 }
@@ -305,6 +334,16 @@ export async function createProduct(product: Omit<Product, 'id' | 'created_at' |
     ],
   });
   
+  // Create notification for seller
+  await createNotification({
+    user_id: product.user_id,
+    type: 'new_product',
+    title: 'New Product Added',
+    message: `Product "${product.name}" has been added successfully`,
+    is_read: false,
+    related_id: id,
+  });
+  
   return { ...product, id, created_at: now, updated_at: now };
 }
 
@@ -334,6 +373,30 @@ export async function createProductVariant(variant: Omit<ProductVariant, 'id' | 
   return { ...variant, id, created_at: now };
 }
 
+export async function updateProductVariantStock(variantId: string, newStock: number): Promise<void> {
+  const variant = await getProductVariantById(variantId);
+  if (!variant) return;
+
+  await turso.execute({
+    sql: 'UPDATE product_variants SET stock = ? WHERE id = ?',
+    args: [newStock, variantId],
+  });
+
+  // Get product to find seller user_id
+  const product = await getProductById(variant.product_id);
+  if (product) {
+    // Create notification for inventory update
+    await createNotification({
+      user_id: product.user_id,
+      type: 'inventory_update',
+      title: 'Inventory Updated',
+      message: `Stock for product variant has been updated to ${newStock}`,
+      is_read: false,
+      related_id: variantId,
+    });
+  }
+}
+
 // Get products by user ID
 export async function getProductsByUserId(userId: string): Promise<Product[]> {
   const result = await turso.execute({
@@ -347,6 +410,52 @@ export async function updateProductActiveStatus(productId: string, isActive: boo
   await turso.execute({
     sql: 'UPDATE products SET is_active = ?, updated_at = ? WHERE id = ?',
     args: [isActive ? 1 : 0, new Date().toISOString(), productId],
+  });
+}
+
+export async function updateProduct(productId: string, updates: Partial<Omit<Product, 'id' | 'user_id' | 'store_id' | 'created_at' | 'updated_at'>>): Promise<void> {
+  const product = await getProductById(productId);
+  if (!product) return;
+
+  const updateFields: string[] = [];
+  const args: any[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.description !== undefined) {
+    updateFields.push('description = ?');
+    args.push(updates.description);
+  }
+  if (updates.cover_image_url !== undefined) {
+    updateFields.push('cover_image_url = ?');
+    args.push(updates.cover_image_url);
+  }
+  if (updates.is_active !== undefined) {
+    updateFields.push('is_active = ?');
+    args.push(updates.is_active ? 1 : 0);
+  }
+
+  if (updateFields.length === 0) return;
+
+  updateFields.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(productId);
+
+  await turso.execute({
+    sql: `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`,
+    args,
+  });
+
+  // Create notification for product update
+  await createNotification({
+    user_id: product.user_id,
+    type: 'product_update',
+    title: 'Product Updated',
+    message: `Product "${product.name}" has been updated`,
+    is_read: false,
+    related_id: productId,
   });
 }
 
@@ -418,6 +527,52 @@ export async function updateStoreApprovalStatus(storeId: string, status: 'pendin
   });
 }
 
+// Update store details
+export async function updateStore(storeId: string, store: Partial<Omit<Store, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'approval_status'>>): Promise<void> {
+  const updates: string[] = [];
+  const args: any[] = [];
+
+  if (store.name !== undefined) {
+    updates.push('name = ?');
+    args.push(store.name);
+  }
+  if (store.logo_url !== undefined) {
+    updates.push('logo_url = ?');
+    args.push(store.logo_url);
+  }
+  if (store.contact_person !== undefined) {
+    updates.push('contact_person = ?');
+    args.push(store.contact_person);
+  }
+  if (store.phone !== undefined) {
+    updates.push('phone = ?');
+    args.push(store.phone);
+  }
+  if (store.category !== undefined) {
+    updates.push('category = ?');
+    args.push(store.category);
+  }
+  if (store.address !== undefined) {
+    updates.push('address = ?');
+    args.push(store.address);
+  }
+  if (store.description !== undefined) {
+    updates.push('description = ?');
+    args.push(store.description);
+  }
+
+  if (updates.length === 0) return;
+
+  updates.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(storeId);
+
+  await turso.execute({
+    sql: `UPDATE stores SET ${updates.join(', ')} WHERE id = ?`,
+    args,
+  });
+}
+
 // Get all pending stores (for admin)
 export async function getPendingStores(): Promise<Store[]> {
   const result = await turso.execute({
@@ -446,6 +601,82 @@ export async function createWallet(wallet: Omit<Wallet, 'id' | 'created_at'>): P
   });
   
   return { ...wallet, id, created_at: now };
+}
+
+// Update wallet primary status
+export async function updateWalletPrimaryStatus(userId: string, walletId: string): Promise<void> {
+  // Set all wallets to non-primary first
+  await turso.execute({
+    sql: 'UPDATE wallets SET is_primary = 0 WHERE user_id = ?',
+    args: [userId],
+  });
+  
+  // Set the selected wallet as primary
+  await turso.execute({
+    sql: 'UPDATE wallets SET is_primary = 1 WHERE id = ?',
+    args: [walletId],
+  });
+}
+
+// Delete wallet
+export async function deleteWallet(walletId: string): Promise<void> {
+  await turso.execute({
+    sql: 'DELETE FROM wallets WHERE id = ?',
+    args: [walletId],
+  });
+}
+
+// Notification functions
+export async function createNotification(notification: Omit<Notification, 'id' | 'created_at'>): Promise<Notification> {
+  const id = `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date().toISOString();
+  
+  await turso.execute({
+    sql: 'INSERT INTO notifications (id, user_id, type, title, message, is_read, related_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      notification.user_id,
+      notification.type,
+      notification.title,
+      notification.message,
+      notification.is_read ? 1 : 0,
+      notification.related_id || null,
+      now,
+    ],
+  });
+  
+  return { ...notification, id, created_at: now };
+}
+
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  const result = await turso.execute({
+    sql: 'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0',
+    args: [userId],
+  });
+  const row = rowAs<CountRow>(result.rows[0]);
+  return Number(row.count);
+}
+
+export async function getNotificationsByUserId(userId: string): Promise<Notification[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+    args: [userId],
+  });
+  return rowsAs<Notification>(result.rows);
+}
+
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  await turso.execute({
+    sql: 'UPDATE notifications SET is_read = 1 WHERE id = ?',
+    args: [notificationId],
+  });
+}
+
+export async function markAllNotificationsAsRead(userId: string): Promise<void> {
+  await turso.execute({
+    sql: 'UPDATE notifications SET is_read = 1 WHERE user_id = ?',
+    args: [userId],
+  });
 }
 
 // Get all orders (for seller dashboard)

@@ -148,7 +148,17 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
       window.location.href = `/order-tracking/${order.id}`;
     } catch (error) {
       console.error('Error submitting order:', error);
-      alert('Failed to submit order. Please try again.');
+      if (error instanceof Error) {
+        if (error.message === 'Insufficient stock') {
+          alert('Sorry, this product is out of stock or the requested quantity is not available.');
+        } else if (error.message === 'Product variant not found') {
+          alert('Product variant not found. Please try again.');
+        } else {
+          alert('Failed to submit order. Please try again.');
+        }
+      } else {
+        alert('Failed to submit order. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

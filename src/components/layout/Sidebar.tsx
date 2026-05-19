@@ -1,10 +1,30 @@
-import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
+import { getUnreadNotificationCount } from '../../lib/db';
+import { useState, useEffect } from 'react';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const isAdmin = isAdminUser(user);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchUnreadCount() {
+      if (!user) return;
+      try {
+        const count = await getUnreadNotificationCount(user.id);
+        setUnreadCount(count);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    }
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const menuItems = isAdmin
     ? [
@@ -14,13 +34,22 @@ export default function Sidebar() {
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: Package, label: 'Products', path: '/products' },
         { icon: ShoppingCart, label: 'Orders', path: '/orders' },
+        { icon: StoreIcon, label: 'Store Settings', path: '/store-settings' },
         { icon: Wallet, label: 'Payment Wallet', path: '/wallet-setup' },
       ];
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-4">
-      <div className="mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-purple-600">OrderPote</h1>
+        {unreadCount > 0 && (
+          <div className="relative">
+            <Bell className="w-6 h-6 text-purple-600" />
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          </div>
+        )}
       </div>
       
       <nav className="space-y-2">
