@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
 import { getUnreadNotificationCount } from '../../lib/db';
@@ -33,7 +33,8 @@ export default function Sidebar() {
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: Package, label: 'Products', path: '/products' },
+      { icon: Package, label: 'Products', path: '/products' },
+      { icon: BarChart, label: 'Product Traffic', path: '/product-traffic' },
         { icon: ShoppingCart, label: 'Orders', path: '/orders' },
         { icon: Bell, label: 'Notifications', path: '/notifications' },
         { icon: StoreIcon, label: 'Store Settings', path: '/store-settings' },

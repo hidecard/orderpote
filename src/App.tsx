@@ -18,6 +18,7 @@ import OrderList from './components/orders/OrderList';
 import OrderDetail from './components/orders/OrderDetail';
 import StoreApproval from './components/admin/StoreApproval';
 import NotificationsPage from './components/notifications/NotificationsPage';
+import ProductTrafficPage from './pages/ProductTraffic';
 import ProductLandingPage from './components/buyer/ProductLandingPage';
 import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
@@ -188,6 +189,16 @@ function App() {
               <SellerAccessGate>
                 <DashboardLayout title="Edit Product">
                   <EditProductForm />
+                </DashboardLayout>
+              </SellerAccessGate>
+            }
+          />
+          <Route
+            path="/product-traffic"
+            element={
+              <SellerAccessGate>
+                <DashboardLayout title="Product Traffic">
+                  <ProductTrafficPage />
                 </DashboardLayout>
               </SellerAccessGate>
             }

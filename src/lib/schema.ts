@@ -205,6 +205,7 @@ export interface Product {
   slug: string;
   cover_image_url?: string;
   is_active: boolean;
+  low_stock_threshold?: number;
   created_at: string;
   updated_at: string;
 }

@@ -1,12 +1,12 @@
 import { DollarSign, ShoppingCart, Clock, Eye } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
-import { getDashboardStats, getSalesData, getTopProducts, getProductViews, getLeastSellingProducts, getLowStockVariants } from '../../lib/db';
+import { getDashboardStats, getSalesData, getTopProducts, getLeastSellingProducts, getLowStockVariants } from '../../lib/db';
 import { useAuth } from '../../context/AuthContext';
 
 type SalesDataPoint = { name: string; sales: number };
 type TopProductDataPoint = { name: string; value: number; color: string };
-type ProductViewDataPoint = { id: string; slug: string; name: string; views: number; orders: number };
+// Product view widget moved to separate page; removed inline ProductViewDataPoint
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -18,7 +18,7 @@ export default function Dashboard() {
   });
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
   const [topProductsData, setTopProductsData] = useState<TopProductDataPoint[]>([]);
-  const [productViews, setProductViews] = useState<ProductViewDataPoint[]>([]);
+  // productViews removed from dashboard (moved to dedicated page)
   const [leastProducts, setLeastProducts] = useState<TopProductDataPoint[]>([]);
   const [lowStock, setLowStock] = useState<{ variant_id: string; product_name: string; variant_name: string; stock: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,11 +31,10 @@ export default function Dashboard() {
       }
 
       try {
-        const [stats, sales, topProducts, views, least, low] = await Promise.all([
+        const [stats, sales, topProducts, least, low] = await Promise.all([
           getDashboardStats(user.id),
           getSalesData(user.id, 7),
           getTopProducts(user.id, 5),
-          getProductViews(user.id, 10),
           getLeastSellingProducts(user.id, 5),
           getLowStockVariants(user.id, 5),
         ]);
@@ -43,7 +42,6 @@ export default function Dashboard() {
         setKpiData(stats);
         setSalesData(sales);
         setTopProductsData(topProducts);
-        setProductViews(views);
         setLeastProducts(least);
         setLowStock(low);
       } catch (error) {
@@ -167,43 +165,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Product Views Table */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Product Traffic</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Product Name</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Activity</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Conversion Rate</th>
-                  </tr>
-            </thead>
-            <tbody>
-                  {productViews.map((p) => (
-                    <tr key={p.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        <a className="text-blue-600 hover:underline" href={`/product/${p.slug || p.id}`}>{p.name}</a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded">
-                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            <span className="text-sm">{p.views}</span>
-                          </div>
-                          <div className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded">
-                            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h4l3 8 4-16 3 8h4"></path></svg>
-                            <span className="text-sm">{p.orders}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.views ? `${Math.round((p.orders / p.views) * 100)}%` : '0%'}</td>
-                    </tr>
-                  ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Product Traffic moved to a dedicated page (/product-traffic) */}
 
       {/* Seller Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">

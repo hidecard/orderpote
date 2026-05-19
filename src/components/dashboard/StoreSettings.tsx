@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Store, Save, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getStoreByUserId, updateStore } from '../../lib/db';
-import type { Store as StoreType } from '../../lib/schema';
+import { getStoreByUserId, updateStore, getProductsByUserId, updateProduct } from '../../lib/db';
+import type { Store as StoreType, Product } from '../../lib/schema';
 
 export default function StoreSettings() {
   const { user } = useAuth();
@@ -19,6 +19,8 @@ export default function StoreSettings() {
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [thresholds, setThresholds] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function fetchStore() {
@@ -39,6 +41,13 @@ export default function StoreSettings() {
           setDescription(storeData.description);
           setLogoUrl(storeData.logo_url || '');
         }
+          const prods = await getProductsByUserId(user.id);
+          setProducts(prods);
+          const map: Record<string, number> = {};
+          prods.forEach((p) => {
+            map[p.id] = (p as any).low_stock_threshold ?? 5;
+          });
+          setThresholds(map);
       } catch (error) {
         console.error('Error fetching store:', error);
         setError('Failed to load store data');
@@ -260,6 +269,46 @@ export default function StoreSettings() {
               </button>
             </div>
           </form>
+
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-3">Low-stock Alerts (per product)</h3>
+            <p className="text-sm text-gray-500 mb-4">Set the threshold at which you'll receive a low-stock notification for each product.</p>
+
+            <div className="space-y-3">
+              {products.map((p) => (
+                <div key={p.id} className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded">
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">{p.name}</div>
+                    <div className="text-xs text-gray-500">{p.slug}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={thresholds[p.id] ?? 5}
+                      onChange={(e) => setThresholds({ ...thresholds, [p.id]: Number(e.target.value) })}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                    <button
+                      onClick={async () => {
+                        try {
+                          await updateProduct(p.id, { low_stock_threshold: thresholds[p.id] });
+                          // refresh products
+                          const refreshed = await getProductsByUserId((user as any).id);
+                          setProducts(refreshed);
+                        } catch (err) {
+                          console.error('Failed to update threshold', err);
+                        }
+                      }}
+                      className="bg-purple-600 text-white px-3 py-2 rounded-lg text-sm"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm">

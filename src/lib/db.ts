@@ -340,14 +340,32 @@ export async function getProductViews(userId: string, limit: number = 10) {
     `,
     args: [userId, limit],
   });
-  
-  return rowsAs<ProductViewRow>(result.rows).map((row) => ({
-    id: String((row as any).id),
-    slug: String((row as any).slug),
-    name: String((row as any).name),
-    views: Number((row as any).views),
-    orders: Number((row as any).orders),
-  }));
+  type RawRow = {
+    id?: string | null;
+    slug?: string | null;
+    name?: string | null;
+    views?: number | string | null;
+    orders?: number | string | null;
+  };
+
+  const res = result as { rows?: unknown[] } | undefined;
+  const rows = Array.isArray(res?.rows) ? (res!.rows as RawRow[]) : [];
+
+  return rows.map((row) => {
+    const id = row.id ?? '';
+    const slug = row.slug ?? '';
+    const name = row.name ?? 'Unknown Product';
+    const views = typeof row.views === 'string' ? Number(row.views) : (typeof row.views === 'number' ? row.views : 0);
+    const orders = typeof row.orders === 'string' ? Number(row.orders) : (typeof row.orders === 'number' ? row.orders : 0);
+
+    return {
+      id: String(id),
+      slug: String(slug),
+      name: String(name),
+      views,
+      orders,
+    } as ProductViewRow;
+  });
 }
 
 // Page view tracking
@@ -524,6 +542,10 @@ export async function updateProduct(productId: string, updates: Partial<Omit<Pro
   if (updates.is_active !== undefined) {
     updateFields.push('is_active = ?');
     args.push(updates.is_active ? 1 : 0);
+  }
+  if ((updates as unknown as Partial<Product>).low_stock_threshold !== undefined) {
+    updateFields.push('low_stock_threshold = ?');
+    args.push((updates as unknown as Partial<Product>).low_stock_threshold as number);
   }
 
   if (updateFields.length === 0) return;
