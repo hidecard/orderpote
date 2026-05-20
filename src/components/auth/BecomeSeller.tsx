@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { Store, CheckCircle, ArrowLeft } from 'lucide-react';
+import type { ChangeEvent, FormEvent } from 'react';
+import { Store, CheckCircle, ArrowLeft, Upload, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { createStore } from '../../lib/db';
 
@@ -15,6 +15,55 @@ export default function BecomeSeller() {
   const [logoUrl, setLogoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const readImageAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const maxSize = 400; // Logo doesn't need to be very large
+          let { width, height } = img;
+
+          if (width > height && width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+
+          canvas.width = Math.round(width);
+          canvas.height = Math.round(height);
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleLogoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      try {
+        const dataUrl = await readImageAsDataUrl(files[0]);
+        setLogoUrl(dataUrl);
+      } catch (err) {
+        console.error('Error uploading logo:', err);
+        setError('Logo upload လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။');
+      }
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoUrl('');
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -94,6 +143,43 @@ export default function BecomeSeller() {
           )}
 
           <div className="space-y-6">
+            {/* Logo Upload Section */}
+            <div className="flex flex-col items-center justify-center mb-8">
+              <label className="block text-sm font-black text-gray-700 mb-4 text-center w-full">
+                ဆိုင် Logo တင်ရန်
+              </label>
+              <div className="relative group">
+                {logoUrl ? (
+                  <div className="relative">
+                    <img
+                      src={logoUrl}
+                      alt="Store Logo Preview"
+                      className="w-32 h-32 object-cover rounded-3xl border-4 border-gray-50 shadow-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeLogo}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-32 h-32 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl cursor-pointer hover:border-[#1a7f8c] hover:bg-[#1a7f8c]/5 transition-all group">
+                    <Upload className="w-8 h-8 text-gray-400 group-hover:text-[#1a7f8c] mb-2" />
+                    <span className="text-xs font-bold text-gray-400 group-hover:text-[#1a7f8c]">Upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="mt-3 text-xs text-gray-400 font-medium">PNG သို့မဟုတ် JPG (အများဆုံး ၅MB)</p>
+            </div>
+
             <div>
               <label className="block text-sm font-black text-gray-700 mb-2">
                 ဆိုင်အမည် (Store Name) *
@@ -138,33 +224,18 @@ export default function BecomeSeller() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-black text-gray-700 mb-2">
-                  လုပ်ငန်းအမျိုးအစား *
-                </label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#1a7f8c] focus:bg-white focus:border-transparent transition-all outline-none font-medium"
-                  placeholder="အဝတ်အထည်၊ အစားအသောက်၊ စသည်..."
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-black text-gray-700 mb-2">
-                  ဆိုင် Logo URL (ရှိလျှင်)
-                </label>
-                <input
-                  type="url"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#1a7f8c] focus:bg-white focus:border-transparent transition-all outline-none font-medium"
-                  placeholder="https://example.com/logo.png"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-black text-gray-700 mb-2">
+                လုပ်ငန်းအမျိုးအစား *
+              </label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#1a7f8c] focus:bg-white focus:border-transparent transition-all outline-none font-medium"
+                placeholder="အဝတ်အထည်၊ အစားအသောက်၊ စသည်..."
+                required
+              />
             </div>
 
             <div>
