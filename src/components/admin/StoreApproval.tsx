@@ -143,16 +143,7 @@ export default function StoreApproval() {
                   <p className="text-gray-500 mb-1">Category</p>
                   <p className="font-medium text-gray-900">{store.category || 'Not provided'}</p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-500 mb-1">Logo URL</p>
-                  {store.logo_url ? (
-                    <a href={store.logo_url} target="_blank" rel="noreferrer" className="font-medium text-purple-600 hover:text-purple-700 break-all">
-                      {store.logo_url}
-                    </a>
-                  ) : (
-                    <p className="font-medium text-gray-900">Not provided</p>
-                  )}
-                </div>
+
                 <div className="bg-gray-50 rounded-lg p-4 md:col-span-2">
                   <p className="text-gray-500 mb-1">Shop Address</p>
                   <p className="font-medium text-gray-900 whitespace-pre-wrap">{store.address || 'Not provided'}</p>
