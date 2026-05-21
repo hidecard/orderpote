@@ -3,9 +3,11 @@ import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
 import { getUnreadNotificationCount } from '../../lib/db';
 import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const isAdmin = isAdminUser(user);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -50,21 +52,28 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 overflow-y-auto pr-1 space-y-2">
-        {menuItems.map((item) => (
-          <a
-            key={item.path}
-            href={item.path}
-            className="flex items-center gap-3 px-4 py-3 text-gray-700 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-colors"
-          >
-            <item.icon className="w-5 h-5" />
-            <span className="flex-1">{item.label}</span>
-            {item.path === '/notifications' && unreadCount > 0 && (
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </a>
-        ))}
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-purple-100 text-purple-600 font-bold' 
+                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span className="flex-1">{item.label}</span>
+              {item.path === '/notifications' && unreadCount > 0 && (
+                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="mt-6 pt-6 border-t border-gray-200">
