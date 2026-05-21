@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, ShoppingCart, Share2 } from 'lucide-react';
-import type { Product, ProductVariant, Review } from '../../lib/schema';
-import { getProductBySlug, getProductImages, getProductVariants, getProductReviews, trackPageView } from '../../lib/db';
+import type { Product, ProductVariant, Review, Store } from '../../lib/schema';
+import { getProductBySlug, getProductImages, getProductVariants, getProductReviews, trackPageView, getStoreByUserId } from '../../lib/db';
 
 interface ProductLandingPageProps {
   slug: string;
@@ -15,6 +15,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [store, setStore] = useState<Store | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +40,8 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
         setVariants(variantsData);
         setSelectedVariant(variantsData[0] || null);
         setReviews(reviewsData);
+        const storeData = await getStoreByUserId(productData.user_id);
+        setStore(storeData);
 
         // Track page view
         await trackPageView(productData.id);
@@ -141,17 +144,32 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
   const totalPrice = selectedVariant ? selectedVariant.price * quantity : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile-optimized layout */}
+    <div className="min-h-screen bg-[#f8fbfc]">
       <div className="max-w-4xl mx-auto p-4">
-        {/* Image Carousel */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden mb-4">
-          <div className="relative aspect-square">
-            <img
-              src={images[currentImageIndex] || product.cover_image_url || 'https://via.placeholder.com/800x800?text=Product'}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
+        <div className="mb-6 rounded-[1.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100">
+          <div className="bg-[#1a7f8c] px-6 py-6 text-white">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black leading-tight">{product.name}</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white">
+                  <img src={store?.logo_url || '/logo.png'} alt={store?.name ? `${store.name} logo` : 'Shop logo'} className="h-full w-full object-contain" />
+                </div>
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-[0.24em] text-[#d7f0f5]">Shop</p>
+                  <p className="text-lg font-semibold">{store?.name || 'Seller Store'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 bg-white">
+            <div className="relative aspect-square rounded-lg overflow-hidden">
+              <img
+                src={images[currentImageIndex] || product.cover_image_url || 'https://via.placeholder.com/800x800?text=Product'}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
             {images.length > 1 && (
               <>
                 <button
@@ -171,13 +189,14 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                     <div
                       key={index}
                       className={`w-2 h-2 rounded-full ${
-                        index === currentImageIndex ? 'bg-purple-600' : 'bg-gray-300'
-                      }`}
+                          index === currentImageIndex ? 'bg-[#1a7f8c]' : 'bg-gray-300'
+                        }`}
                     />
                   ))}
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
 
@@ -203,7 +222,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
           )}
 
           {/* Price */}
-          <div className="text-3xl font-bold text-purple-600 mb-4">
+          <div className="text-3xl font-bold text-[#1a7f8c] mb-4">
             {totalPrice.toLocaleString()} Ks
           </div>
 
@@ -224,8 +243,8 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                     disabled={variant.stock === 0}
                     className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
                       selectedVariant?.id === variant.id
-                        ? 'border-purple-600 bg-purple-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#1a7f8c] bg-[#eaf8fb]'
+                          : 'border-gray-200 hover:border-gray-300'
                     } ${variant.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex justify-between items-center">
@@ -234,7 +253,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                         {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
                       </span>
                     </div>
-                    <div className="text-purple-600 font-semibold">{variant.price.toLocaleString()} Ks</div>
+                    <div className="text-[#1a7f8c] font-semibold">{variant.price.toLocaleString()} Ks</div>
                   </button>
                 ))}
               </div>
@@ -266,7 +285,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
           <button
             onClick={handleBuyNow}
             disabled={!selectedVariant || selectedVariant.stock === 0}
-            className="w-full bg-purple-600 text-white py-4 rounded-xl font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[#1a7f8c] text-white py-4 rounded-xl font-semibold hover:bg-[#156a75] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <ShoppingCart className="w-5 h-5" />
             Buy Now
