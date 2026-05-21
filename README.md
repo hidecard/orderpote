@@ -1,153 +1,74 @@
-# OrderPote
+# OrderPote (အော်ဒါပို့) 🛒
+
+OrderPote သည် မြန်မာနိုင်ငံရှိ Online Seller များအတွက် အထူးရည်ရွယ်၍ ဖန်တီးထားသော **All-in-One E-commerce Solution** ဖြစ်ပါသည်။ ကုန်ပစ္စည်းတင်ခြင်း၊ အော်ဒါလက်ခံခြင်းနှင့် ငွေပေးချေမှုများကို စနစ်တကျ စီမံခန့်ခွဲနိုင်ရန် ကူညီပေးပါသည်။
 
 OrderPote is a comprehensive e-commerce platform designed for Myanmar sellers to easily create product links, accept payments via mobile banking, and manage orders through a simple dashboard.
 
-## Features
+---
 
-### Seller Web Dashboard
-- **Authentication & Onboarding**: Phone/Google sign-in with OTP verification, multi-wallet setup (KPay, Wave Money, AYA Pay, CB Pay, KBZ iBanking), store settings configuration
-- **Product Management**: Drag-and-drop multi-image upload, rich-text descriptions, dynamic variant matrix (size, color), real-time stock tracking, product bundling, link status toggle, QR code generation
-- **Dashboard & Analytics**: KPI scorecards (revenue, orders, pending), sales charts (line & pie charts), link traffic tracker
-- **Order Management**: Live order table with smart filters, screenshot verification lightbox, fulfillment operations, bulk export to Excel/CSV
+## ✨ အဓိက လုပ်ဆောင်ချက်များ (Key Features)
 
-### Buyer Mobile Web App
-- **Product Landing Page**: Mobile-optimized carousel, smart variant selector, social proof (reviews & ratings)
-- **Checkout & Payment**: One-click clipboard copy for wallet numbers, hierarchical address dropdowns (region/township), client-side image compression
-- **Order Tracking**: Real-time status timeline, PDF generation & export, fulfillment link integrations, cookie-based local history
+### 🛍️ Seller Dashboard (ရောင်းချသူများအတွက်)
+- **Smart Product Links**: ကုန်ပစ္စည်းတစ်ခုချင်းစီအတွက် သီးသန့် Link များ ထုတ်ပေးနိုင်ခြင်း။
+- **Inventory Management**: ပစ္စည်းလက်ကျန် (Stock) များကို စနစ်တကျ စောင့်ကြည့်နိုင်ခြင်း။
+- **Sales Analytics**: အရောင်းအဝယ် အခြေအနေများကို Chart များဖြင့် အလွယ်တကူ ကြည့်ရှုနိုင်ခြင်း။
+- **Subscription System**: လအလိုက်/နှစ်အလိုက် Plan များဖြင့် အသုံးပြုနိုင်ပြီး ၁၀ ရက် Trial စမ်းသပ်နိုင်ခြင်း။
+- **Mobile-First Design**: ဖုန်းဖြင့် အလွယ်တကူ အသုံးပြုနိုင်ရန် ပြုလုပ်ထားခြင်း။
 
-## Tech Stack
+### 🛒 Buyer Experience (ဝယ်ယူသူများအတွက်)
+- **Fast Checkout**: အကောင့်ဖွင့်ရန် မလိုဘဲ မြန်ဆန်စွာ ဝယ်ယူနိုင်ခြင်း။
+- **Payment Verification**: ငွေလွှဲ Screenshot ကို တိုက်ရိုက် Upload တင်နိုင်ခြင်း။
+- **Order Tracking**: မိမိအော်ဒါ၏ အခြေအနေကို အချိန်နှင့်တပြေးညီ စစ်ဆေးနိုင်ခြင်း။
+- **Digital Receipts**: ဝယ်ယူပြီးပါက Digital ပြေစာများကို ချက်ချင်း ရရှိနိုင်ခြင်း။
 
-- **Frontend**: React 19 + TypeScript + Vite
-- **Styling**: Tailwind CSS
-- **Routing**: React Router
-- **Database**: Turso (libsql://orderpote-hidecatd.aws-ap-northeast-1.turso.io)
-- **Charts**: Recharts
+### 🛡️ Admin Dashboard (စီမံခန့်ခွဲသူများအတွက်)
+- **Store Approvals**: ဆိုင်အသစ်များကို စစ်ဆေးပြီး အတည်ပြုပေးနိုင်ခြင်း။
+- **Plan Management**: Subscription Plan များ၏ ဈေးနှုန်းနှင့် သက်တမ်းများကို စီမံခန့်ခွဲနိုင်ခြင်း။
+- **Seller Management**: ရောင်းချသူများ၏ အခြေအနေကို စောင့်ကြည့်နိုင်ခြင်း။
+
+---
+
+## 🛠️ အသုံးပြုထားသော နည်းပညာများ (Tech Stack)
+
+- **Frontend**: React 19, TypeScript, Tailwind CSS
 - **Icons**: Lucide React
-- **Utilities**: clsx, tailwind-merge
+- **Charts**: Recharts
+- **Database**: Turso (LibSQL)
+- **State Management**: React Context API
+- **Routing**: React Router DOM
+- **Build Tool**: Vite
 
-## Getting Started
+---
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+## 🚀 စတင်အသုံးပြုပုံ (Getting Started)
 
-### Installation
-
-1. Clone the repository:
+### ၁။ Clone the repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/hidecard/orderpote.git
 cd orderpote
 ```
 
-2. Install dependencies:
+### ၂။ Install dependencies
 ```bash
-npm install
+pnpm install
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your Turso auth token:
+### ၃။ Environment Setup
+`.env` file ထဲတွင် လိုအပ်သော Database URL နှင့် Token များကို ထည့်သွင်းပါ။
 ```
 VITE_TURSO_AUTH_TOKEN=your_turso_auth_token_here
 ```
 
-4. Start the development server:
+### ၄။ Run development server
 ```bash
-npm run dev
+pnpm dev
 ```
 
-5. Open your browser and navigate to `http://localhost:5173`
+---
 
-### Database Setup
+## 📝 လိုင်စင် (License)
+ဤ Project ကို MIT License ဖြင့် ထုတ်ဝေထားပါသည်။
 
-The database schema is defined in `src/lib/schema.ts`. To set up your Turso database:
+---
 
-1. Create a Turso account at https://turso.tech
-2. Create a new database
-3. Run the SQL schema from `src/lib/schema.ts` in your Turso dashboard
-4. Copy your database URL and auth token
-5. Update `src/lib/turso.ts` with your credentials
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-The built files will be in the `dist` directory.
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── auth/           # Authentication components
-│   ├── buyer/          # Buyer-facing components
-│   ├── dashboard/      # Dashboard components
-│   ├── layout/         # Layout components
-│   ├── orders/         # Order management components
-│   └── products/       # Product management components
-├── context/           # React context providers
-├── lib/               # Utilities and database configuration
-├── pages/             # Page components
-├── App.tsx            # Main app with routing
-└── main.tsx           # Entry point
-```
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-## Key Modules
-
-### Module 1: Authentication & Onboarding
-- Phone/Google sign-in with OTP verification
-- Multi-wallet storage (KPay, Wave Money, AYA Pay, CB Pay, KBZ iBanking)
-- Primary account selector
-- Store settings (name, logo, phone)
-
-### Module 2: Product Listing & Inventory
-- Drag-and-drop multi-image upload
-- Rich-text product description
-- Dynamic variant matrix (size, color, price, stock)
-- Real-time stock counter
-- Product bundling & cross-selling
-- Link status toggle (Active/Inactive)
-- QR code generation
-
-### Module 3: Dashboard & Analytics
-- KPI scorecards (revenue, orders, pending)
-- Sales analytical charts (line & pie charts)
-- Link traffic tracker (page views per product)
-
-### Module 4: Order Management
-- Advanced live order table with smart filters
-- Screenshot verification lightbox
-- Fulfillment operations (delivery service, tracking ID)
-- One-click bulk export (Excel/CSV)
-
-### Module 5: Buyer Product Landing Page
-- Mobile-optimized image carousel
-- Smart variant selector with live price calculation
-- Social proof (reviews & ratings)
-
-### Module 6: Checkout & Payment
-- One-click clipboard copy for wallet numbers
-- Hierarchical address dropdowns (region/township)
-- Client-side image compression for screenshots
-
-### Module 7: Order Tracking
-- Real-time status timeline (Pending → Paid → Preparing → Delivered)
-- PDF generation & export
-- Fulfillment link integrations
-- Cookie-based local order history
-
-## License
-
-MIT
+**OrderPote** - လွယ်ကူ လျင်မြန်သော အော်ဒါစီမံမှု 🚀
