@@ -115,6 +115,8 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_township TEXT NOT NULL,
   quantity INTEGER NOT NULL,
   total_price INTEGER NOT NULL,
+  coupon_code TEXT,
+  discount_amount INTEGER DEFAULT 0,
   payment_status TEXT DEFAULT 'pending', -- pending, paid, failed
   delivery_status TEXT DEFAULT 'pending', -- pending, preparing, shipped, delivered
   payment_screenshot_url TEXT,
@@ -124,6 +126,23 @@ CREATE TABLE IF NOT EXISTS orders (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id),
   FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+);
+
+-- Coupon codes
+CREATE TABLE IF NOT EXISTS coupon_codes (
+  id TEXT PRIMARY KEY,
+  seller_id TEXT NOT NULL,
+  code TEXT NOT NULL UNIQUE,
+  discount_percentage INTEGER NOT NULL DEFAULT 0,
+  description TEXT,
+  active BOOLEAN DEFAULT 1,
+  max_uses INTEGER DEFAULT 0,
+  uses INTEGER DEFAULT 0,
+  starts_at DATETIME,
+  ends_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (seller_id) REFERENCES users(id)
 );
 
 -- Page views (analytics)
@@ -183,6 +202,22 @@ CREATE TABLE IF NOT EXISTS reviews (
 	  FOREIGN KEY (user_id) REFERENCES users(id),
 	  FOREIGN KEY (plan_id) REFERENCES plans(id)
 	);
+
+	-- Subscription payment logs
+    CREATE TABLE IF NOT EXISTS subscription_payments (
+      id TEXT PRIMARY KEY,
+      subscription_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      plan_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      billing_cycle TEXT NOT NULL,
+      payment_type TEXT NOT NULL,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (plan_id) REFERENCES plans(id)
+    );
 	*/
 
 export interface User {
@@ -272,6 +307,33 @@ export interface Plan {
 	  plan_price_yearly?: number;
 	}
 
+export interface SubscriptionPaymentLog {
+  id: string;
+  subscription_id: string;
+  user_id: string;
+  plan_id: string;
+  amount: number;
+  billing_cycle: 'monthly' | 'yearly' | 'trial';
+  payment_type: 'subscription' | 'trial' | 'adjustment';
+  notes?: string;
+  created_at: string;
+}
+
+export interface CouponCode {
+  id: string;
+  seller_id: string;
+  code: string;
+  discount_percentage: number;
+  description?: string;
+  active: boolean;
+  max_uses: number;
+  uses: number;
+  starts_at?: string;
+  ends_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProductVariant {
   id: string;
   product_id: string;
@@ -292,6 +354,8 @@ export interface Order {
   customer_township: string;
   quantity: number;
   total_price: number;
+  coupon_code?: string;
+  discount_amount?: number;
   payment_status: 'pending' | 'paid' | 'failed';
   delivery_status: 'pending' | 'preparing' | 'shipped' | 'delivered';
   payment_screenshot_url?: string;

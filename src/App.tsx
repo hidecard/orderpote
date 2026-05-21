@@ -11,6 +11,7 @@ import BecomeSeller from './components/auth/BecomeSeller';
 import SellerPending from './components/auth/SellerPending';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './components/dashboard/Dashboard';
+import Discounts from './components/dashboard/Discounts';
 import ProductList from './components/products/ProductList';
 import AddProductForm from './components/products/AddProductForm';
 import EditProductForm from './components/products/EditProductForm';
@@ -191,6 +192,16 @@ function App() {
               <SellerAccessGate>
                 <DashboardLayout title="Products">
                   <ProductList />
+                </DashboardLayout>
+              </SellerAccessGate>
+            }
+          />
+          <Route
+            path="/discounts"
+            element={
+              <SellerAccessGate>
+                <DashboardLayout title="Discounts">
+                  <Discounts />
                 </DashboardLayout>
               </SellerAccessGate>
             }

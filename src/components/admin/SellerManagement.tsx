@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getSellers, getPlans, getSellerSubscriptionWithPlan, assignPlanToSeller, updateSubscriptionStatus, createPlan } from '../../lib/db';
-import type { User, Plan, SubscriptionWithPlan } from '../../lib/schema';
+import { getSellers, getPlans, getSellerSubscriptionWithPlan, getSubscriptionPaymentLogsByUser, assignPlanToSeller, updateSubscriptionStatus, createPlan } from '../../lib/db';
+import type { User, Plan, SubscriptionWithPlan, SubscriptionPaymentLog } from '../../lib/schema';
 
 export default function SellerManagement() {
   const [sellers, setSellers] = useState<User[]>([]);
@@ -263,9 +263,11 @@ function SellerRow({ seller, plans, actionLoading, onAssign, onStartTrial, onCan
   onCancel: (subscriptionId: string) => Promise<void>;
 }) {
   const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
+  const [paymentLogs, setPaymentLogs] = useState<SubscriptionPaymentLog[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(true);
 
   useEffect(() => {
     if (plans.length > 0 && !selectedPlan) {
@@ -289,6 +291,24 @@ function SellerRow({ seller, plans, actionLoading, onAssign, onStartTrial, onCan
     loadSub();
     return () => { mounted = false; };
   }, [seller.id]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadLogs() {
+      setLogsLoading(true);
+      try {
+        const logs = await getSubscriptionPaymentLogsByUser(seller.id);
+        if (mounted) setPaymentLogs(logs);
+      } catch (err) {
+        console.error('Failed to load payment logs', err);
+      } finally {
+        if (mounted) setLogsLoading(false);
+      }
+    }
+
+    loadLogs();
+    return () => { mounted = false; };
+  }, [seller.id, actionLoading]);
 
   return (
     <div className="rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -366,6 +386,27 @@ function SellerRow({ seller, plans, actionLoading, onAssign, onStartTrial, onCan
             )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 text-sm font-semibold text-gray-700">Subscription payment history</div>
+        {logsLoading ? (
+          <div className="text-sm text-gray-500">Loading payment history...</div>
+        ) : paymentLogs.length === 0 ? (
+          <div className="text-sm text-gray-500">No payment history available.</div>
+        ) : (
+          <div className="space-y-3">
+            {paymentLogs.map((log) => (
+              <div key={log.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                <div className="font-medium text-gray-800">{log.payment_type === 'trial' ? 'Trial started' : 'Subscription payment'}</div>
+                <div className="text-gray-600">Amount: {Number(log.amount).toLocaleString()} Ks</div>
+                <div className="text-gray-600">Billing: {log.billing_cycle}</div>
+                {log.notes && <div className="text-gray-600">Notes: {log.notes}</div>}
+                <div className="text-gray-500">{new Date(log.created_at).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

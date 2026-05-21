@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { Copy, Upload, X, CheckCircle } from 'lucide-react';
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
 import type { Product, ProductVariant, Wallet } from '../../lib/schema';
-import { getProductBySlug, getProductVariants, getPrimaryWallet, createOrder } from '../../lib/db';
+import { getProductBySlug, getProductVariants, getPrimaryWallet, createOrder, validateCouponCode } from '../../lib/db';
 
 interface CheckoutFormProps {
   productSlug: string;
@@ -22,6 +22,11 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   const [customerAddress, setCustomerAddress] = useState('');
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string>('');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_percentage: number } | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -106,6 +111,38 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!product) return;
+    if (!couponCode.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+
+    try {
+      const coupon = await validateCouponCode(couponCode.trim(), product.user_id);
+      if (!coupon) {
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+        setCouponError('Coupon code is not valid or has expired');
+        return;
+      }
+
+      const baseTotal = variant ? variant.price * quantity : 0;
+      const discount = Math.round((baseTotal * coupon.discount_percentage) / 100);
+      setAppliedCoupon({ code: coupon.code, discount_percentage: coupon.discount_percentage });
+      setDiscountAmount(discount);
+      setCouponError('');
+    } catch (error) {
+      console.error('Coupon validation failed:', error);
+      setCouponError('Failed to validate coupon. Please try again.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!product || !variant) {
@@ -126,6 +163,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     setIsSubmitting(true);
 
     try {
+      const baseTotal = variant ? variant.price * quantity : 0;
       const order = await createOrder({
         product_id: product.id,
         variant_id: variant.id,
@@ -135,7 +173,9 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         customer_region: customerRegion,
         customer_township: customerTownship,
         quantity,
-        total_price: variant ? variant.price * quantity : 0,
+        total_price: baseTotal - discountAmount,
+        coupon_code: appliedCoupon?.code,
+        discount_amount: discountAmount,
         payment_status: 'pending',
         delivery_status: 'pending',
         payment_screenshot_url: screenshotPreview,
@@ -165,6 +205,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   };
 
   const totalPrice = variant ? variant.price * quantity : 0;
+  const finalPrice = Math.max(0, totalPrice - discountAmount);
 
   if (isLoading) {
     return (
@@ -216,9 +257,16 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
               <h3 className="font-semibold">{product.name}</h3>
               <p className="text-sm text-gray-600">{variant.name}</p>
               <p className="text-sm text-gray-600">Quantity: {quantity}</p>
-              <p className="text-lg font-bold text-purple-600 mt-2">
-                {totalPrice.toLocaleString()} Ks
-              </p>
+              {discountAmount > 0 ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 line-through">{totalPrice.toLocaleString()} Ks</p>
+                  <p className="text-lg font-bold text-purple-600">{finalPrice.toLocaleString()} Ks</p>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-purple-600 mt-2">
+                  {totalPrice.toLocaleString()} Ks
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -255,13 +303,52 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
             </div>
           </div>
           <p className="text-sm text-gray-600 mt-3">
-            Copy the account number and transfer {totalPrice.toLocaleString()} Ks via {primaryWallet.provider}
+            Copy the account number and transfer {finalPrice.toLocaleString()} Ks via {primaryWallet.provider}
           </p>
+          {discountAmount > 0 && (
+            <p className="text-sm text-green-700 mt-2">
+              Discount applied: {discountAmount.toLocaleString()} Ks off ({appliedCoupon?.discount_percentage}% coupon)
+            </p>
+          )}
         </div>
 
         {/* Checkout Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-4 space-y-4">
           <h2 className="font-semibold mb-3">Customer Information</h2>
+
+          <div className="grid gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Coupon Code
+              </label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value);
+                    setAppliedCoupon(null);
+                    setDiscountAmount(0);
+                    setCouponError('');
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Enter coupon code"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponCode.trim()}
+                  className="rounded-lg bg-purple-600 px-4 py-3 text-white text-sm hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {couponLoading ? 'Checking...' : 'Apply'}
+                </button>
+              </div>
+              {couponError && <p className="text-sm text-red-600 mt-2">{couponError}</p>}
+              {appliedCoupon && !couponError && (
+                <p className="text-sm text-green-700 mt-2">Coupon applied: {appliedCoupon.discount_percentage}% off</p>
+              )}
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

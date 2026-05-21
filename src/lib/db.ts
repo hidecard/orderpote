@@ -1,5 +1,5 @@
 import turso from './turso';
-import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan } from './schema';
+import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog } from './schema';
 
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
@@ -89,6 +89,165 @@ async function ensureSubscriptionsSchema(): Promise<void> {
   subscriptionsSchemaEnsured = true;
 }
 
+let subscriptionPaymentsSchemaEnsured = false;
+
+async function ensureSubscriptionPaymentsSchema(): Promise<void> {
+  if (subscriptionPaymentsSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS subscription_payments (
+      id TEXT PRIMARY KEY,
+      subscription_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      plan_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      billing_cycle TEXT NOT NULL,
+      payment_type TEXT NOT NULL,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (plan_id) REFERENCES plans(id)
+    )`,
+  });
+
+  const pragmaResult = await turso.execute({ sql: "PRAGMA table_info(subscription_payments)" });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('subscription_id')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN subscription_id TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('user_id')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN user_id TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('plan_id')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN plan_id TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('amount')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN amount INTEGER NOT NULL DEFAULT 0' });
+  }
+  if (!existingColumns.includes('billing_cycle')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN billing_cycle TEXT NOT NULL DEFAULT "monthly"' });
+  }
+  if (!existingColumns.includes('payment_type')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN payment_type TEXT NOT NULL DEFAULT "subscription"' });
+  }
+  if (!existingColumns.includes('notes')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN notes TEXT' });
+  }
+  if (!existingColumns.includes('created_at')) {
+    await turso.execute({ sql: 'ALTER TABLE subscription_payments ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
+  }
+
+  subscriptionPaymentsSchemaEnsured = true;
+}
+
+let couponCodesSchemaEnsured = false;
+async function ensureCouponCodesSchema(): Promise<void> {
+  if (couponCodesSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS coupon_codes (
+      id TEXT PRIMARY KEY,
+      seller_id TEXT NOT NULL,
+      code TEXT NOT NULL UNIQUE,
+      discount_percentage INTEGER NOT NULL DEFAULT 0,
+      description TEXT,
+      active BOOLEAN DEFAULT 1,
+      max_uses INTEGER DEFAULT 0,
+      uses INTEGER DEFAULT 0,
+      starts_at DATETIME,
+      ends_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (seller_id) REFERENCES users(id)
+    )`,
+  });
+
+  const pragmaResult = await turso.execute({ sql: 'PRAGMA table_info(coupon_codes)' });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('seller_id')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN seller_id TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('code')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN code TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('discount_percentage')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN discount_percentage INTEGER NOT NULL DEFAULT 0' });
+  }
+  if (!existingColumns.includes('description')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN description TEXT' });
+  }
+  if (!existingColumns.includes('active')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN active BOOLEAN DEFAULT 1' });
+  }
+  if (!existingColumns.includes('max_uses')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN max_uses INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('uses')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN uses INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('starts_at')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN starts_at DATETIME' });
+  }
+  if (!existingColumns.includes('ends_at')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN ends_at DATETIME' });
+  }
+  if (!existingColumns.includes('created_at')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
+  }
+  if (!existingColumns.includes('updated_at')) {
+    await turso.execute({ sql: 'ALTER TABLE coupon_codes ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
+  }
+
+  couponCodesSchemaEnsured = true;
+}
+
+let ordersSchemaEnsured = false;
+async function ensureOrdersSchema(): Promise<void> {
+  if (ordersSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      variant_id TEXT,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_address TEXT NOT NULL,
+      customer_region TEXT NOT NULL,
+      customer_township TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      total_price INTEGER NOT NULL,
+      coupon_code TEXT,
+      discount_amount INTEGER DEFAULT 0,
+      payment_status TEXT DEFAULT 'pending',
+      delivery_status TEXT DEFAULT 'pending',
+      payment_screenshot_url TEXT,
+      delivery_service TEXT,
+      tracking_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+  });
+
+  const pragmaResult = await turso.execute({ sql: 'PRAGMA table_info(orders)' });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('coupon_code')) {
+    await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN coupon_code TEXT' });
+  }
+  if (!existingColumns.includes('discount_amount')) {
+    await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN discount_amount INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('updated_at')) {
+    await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
+  }
+
+  ordersSchemaEnsured = true;
+}
+
 const normalizePlan = (row: unknown) => {
   const plan = row as Record<string, unknown>;
   return {
@@ -97,6 +256,31 @@ const normalizePlan = (row: unknown) => {
     price_yearly: Number(plan.price_yearly ?? 0),
     trial_days: Number(plan.trial_days ?? 0),
   } as unknown as Plan;
+};
+
+const normalizeSubscriptionPaymentLog = (row: unknown) => {
+  const log = row as Record<string, unknown>;
+  return {
+    ...log,
+    amount: Number(log.amount ?? 0),
+    billing_cycle: String(log.billing_cycle || 'monthly') as 'monthly' | 'yearly' | 'trial',
+    payment_type: String(log.payment_type || 'subscription') as 'subscription' | 'trial' | 'adjustment',
+    notes: log.notes === null ? undefined : String(log.notes ?? ''),
+  } as unknown as SubscriptionPaymentLog;
+};
+
+const normalizeCouponCode = (row: unknown) => {
+  const coupon = row as Record<string, unknown>;
+  return {
+    ...coupon,
+    discount_percentage: Number(coupon.discount_percentage ?? 0),
+    active: Boolean(Number(coupon.active ?? 0)),
+    max_uses: Number(coupon.max_uses ?? 0),
+    uses: Number(coupon.uses ?? 0),
+    starts_at: coupon.starts_at === null ? undefined : String(coupon.starts_at ?? ''),
+    ends_at: coupon.ends_at === null ? undefined : String(coupon.ends_at ?? ''),
+    description: coupon.description === null ? undefined : String(coupon.description ?? ''),
+  } as unknown as CouponCode;
 };
 
 type CountRow = { count: number | string };
@@ -178,6 +362,7 @@ export async function getOrdersByCustomerPhone(phone: string): Promise<Order[]> 
 }
 
 export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<Order> {
+  await ensureOrdersSchema();
   const id = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
   
@@ -195,9 +380,17 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
     // Decrement stock
     await updateProductVariantStock(order.variant_id, variant.stock - order.quantity);
   }
+
+  if (order.coupon_code) {
+    const coupon = await validateCouponCode(order.coupon_code, (await getProductById(order.product_id))?.user_id || '');
+    if (!coupon) {
+      throw new Error('Invalid coupon code');
+    }
+    await markCouponUsed(coupon.id);
+  }
   
   await turso.execute({
-    sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, coupon_code, discount_amount, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       order.product_id,
@@ -209,6 +402,8 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
       order.customer_township,
       order.quantity,
       order.total_price,
+      order.coupon_code || null,
+      order.discount_amount || 0,
       order.payment_status,
       order.delivery_status,
       order.payment_screenshot_url || null,
@@ -386,6 +581,135 @@ export async function getPlanById(planId: string): Promise<Plan | null> {
   return normalizePlan(result.rows[0]);
 }
 
+export async function createSubscriptionPaymentLog(log: Omit<SubscriptionPaymentLog, 'id' | 'created_at'>): Promise<SubscriptionPaymentLog> {
+  await ensureSubscriptionPaymentsSchema();
+
+  const id = `spl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date().toISOString();
+
+  await turso.execute({
+    sql: 'INSERT INTO subscription_payments (id, subscription_id, user_id, plan_id, amount, billing_cycle, payment_type, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      log.subscription_id,
+      log.user_id,
+      log.plan_id,
+      log.amount,
+      log.billing_cycle,
+      log.payment_type,
+      log.notes || null,
+      now,
+    ],
+  });
+
+  return { ...log, id, created_at: now } as SubscriptionPaymentLog;
+}
+
+export async function getSubscriptionPaymentLogsByUser(userId: string): Promise<SubscriptionPaymentLog[]> {
+  await ensureSubscriptionPaymentsSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM subscription_payments WHERE user_id = ? ORDER BY created_at DESC',
+    args: [userId],
+  });
+  return rowsAs<unknown>(result.rows).map(normalizeSubscriptionPaymentLog);
+}
+
+export async function getCouponsBySellerId(sellerId: string): Promise<CouponCode[]> {
+  await ensureCouponCodesSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM coupon_codes WHERE seller_id = ? ORDER BY created_at DESC',
+    args: [sellerId],
+  });
+  return rowsAs<unknown>(result.rows).map(normalizeCouponCode);
+}
+
+export async function getCouponByCode(code: string, sellerId: string): Promise<CouponCode | null> {
+  await ensureCouponCodesSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM coupon_codes WHERE LOWER(code) = LOWER(?) AND seller_id = ? LIMIT 1',
+    args: [code, sellerId],
+  });
+  if (result.rows.length === 0) return null;
+  return normalizeCouponCode(result.rows[0]);
+}
+
+export async function createCouponCode(coupon: Omit<CouponCode, 'id' | 'created_at' | 'updated_at' | 'uses'>): Promise<CouponCode> {
+  await ensureCouponCodesSchema();
+  const id = `coupon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date().toISOString();
+  const startsAt = coupon.starts_at ? new Date(`${coupon.starts_at}T00:00:00Z`).toISOString() : null;
+  const endsAt = coupon.ends_at ? new Date(`${coupon.ends_at}T23:59:59Z`).toISOString() : null;
+
+  await turso.execute({
+    sql: 'INSERT INTO coupon_codes (id, seller_id, code, discount_percentage, description, active, max_uses, uses, starts_at, ends_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      coupon.seller_id,
+      coupon.code,
+      coupon.discount_percentage,
+      coupon.description || null,
+      coupon.active ? 1 : 0,
+      coupon.max_uses ?? 0,
+      0,
+      startsAt,
+      endsAt,
+      now,
+      now,
+    ],
+  });
+
+  return { ...coupon, id, uses: 0, starts_at: startsAt ?? undefined, ends_at: endsAt ?? undefined, created_at: now, updated_at: now } as CouponCode;
+}
+
+export async function updateCouponCode(couponId: string, updates: Partial<Omit<CouponCode, 'id' | 'seller_id' | 'created_at' | 'updated_at' | 'uses'>>): Promise<void> {
+  await ensureCouponCodesSchema();
+  const normalizedUpdates = { ...updates } as Record<string, unknown>;
+  if (updates.starts_at) {
+    normalizedUpdates.starts_at = new Date(`${String(updates.starts_at)}T00:00:00Z`).toISOString();
+  }
+  if (updates.ends_at) {
+    normalizedUpdates.ends_at = new Date(`${String(updates.ends_at)}T23:59:59Z`).toISOString();
+  }
+  const fields = Object.keys(normalizedUpdates).map((key) => `${key} = ?`).join(', ');
+  const args = [...Object.values(normalizedUpdates).map((value) => (typeof value === 'boolean' ? (value ? 1 : 0) : value)) as Array<string | number | null>, new Date().toISOString(), couponId] as Array<string | number | null>;
+  await turso.execute({
+    sql: `UPDATE coupon_codes SET ${fields}, updated_at = ? WHERE id = ?`,
+    args,
+  });
+}
+
+export async function deleteCouponCode(couponId: string): Promise<void> {
+  await ensureCouponCodesSchema();
+  await turso.execute({ sql: 'DELETE FROM coupon_codes WHERE id = ?', args: [couponId] });
+}
+
+export async function validateCouponCode(code: string, sellerId: string): Promise<CouponCode | null> {
+  await ensureCouponCodesSchema();
+  const coupon = await getCouponByCode(code, sellerId);
+  if (!coupon || !coupon.active) return null;
+
+  const now = new Date();
+  if (coupon.starts_at) {
+    const startsAt = new Date(coupon.starts_at);
+    if (now < startsAt) return null;
+  }
+  if (coupon.ends_at) {
+    const endsAt = new Date(coupon.ends_at);
+    if (now > endsAt) return null;
+  }
+  if (coupon.max_uses > 0 && coupon.uses >= coupon.max_uses) return null;
+
+  return coupon;
+}
+
+export async function markCouponUsed(couponId: string): Promise<void> {
+  await ensureCouponCodesSchema();
+  await turso.execute({
+    sql: 'UPDATE coupon_codes SET uses = uses + 1, updated_at = ? WHERE id = ?',
+    args: [new Date().toISOString(), couponId],
+  });
+}
+
 export async function createSubscription(subscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>): Promise<Subscription> {
   await ensureSubscriptionsSchema();
 
@@ -429,6 +753,18 @@ export async function assignPlanToSeller(userId: string, planId: string, type: '
     ends_at: ends.toISOString(),
     status: 'active',
     is_trial: type === 'trial',
+  });
+
+  const amount = type === 'trial' ? 0 : type === 'yearly' ? plan.price_yearly : plan.price_monthly;
+
+  await createSubscriptionPaymentLog({
+    subscription_id: subscription.id,
+    user_id: userId,
+    plan_id: planId,
+    amount,
+    billing_cycle: type,
+    payment_type: type === 'trial' ? 'trial' : 'subscription',
+    notes: type === 'trial' ? `Started ${plan.trial_days}-day free trial` : `Paid ${type} subscription for ${plan.name}`,
   });
 
   // Notify seller
