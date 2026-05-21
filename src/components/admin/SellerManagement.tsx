@@ -10,6 +10,10 @@ export default function SellerManagement() {
   const [newPlan, setNewPlan] = useState({ name: '', price_monthly: 0, price_yearly: 0, trial_days: 10, description: '' });
   const [planCreating, setPlanCreating] = useState(false);
 
+  const formatPrice = (value: number | undefined | null) => {
+    return Number(value ?? 0).toLocaleString();
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -71,11 +75,11 @@ export default function SellerManagement() {
     }
   }
 
-  async function handleAssignPlan(userId: string, planId: string) {
-    if (!confirm('Assign this plan to the seller?')) return;
+  async function handleAssignPlan(userId: string, planId: string, billingCycle: 'monthly' | 'yearly') {
+    if (!confirm(`Assign this plan to the seller as a ${billingCycle} subscription?`)) return;
     setActionLoading(userId);
     try {
-      await assignPlanToSeller(userId, planId, 'monthly');
+      await assignPlanToSeller(userId, planId, billingCycle);
       alert('Plan assigned');
       await refreshSellers();
     } catch (err) {
@@ -147,7 +151,7 @@ export default function SellerManagement() {
                   seller={seller}
                   plans={plans}
                   actionLoading={actionLoading}
-                  onAssign={async (planId) => await handleAssignPlan(seller.id, planId)}
+                  onAssign={async (planId, billingCycle) => await handleAssignPlan(seller.id, planId, billingCycle)}
                   onStartTrial={async (planId) => await handleStartTrial(seller.id, planId)}
                   onCancel={handleCancelSubscription}
                 />
@@ -235,7 +239,7 @@ export default function SellerManagement() {
                         <div className="text-sm text-gray-500">{plan.description || 'No description'}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-semibold">{plan.price_monthly.toLocaleString()} Ks / mo</div>
+                        <div className="text-lg font-semibold">{formatPrice(plan.price_monthly)} Ks / mo</div>
                         <div className="text-sm text-gray-500">Trial: {plan.trial_days} days</div>
                       </div>
                     </div>
@@ -254,12 +258,13 @@ function SellerRow({ seller, plans, actionLoading, onAssign, onStartTrial, onCan
   seller: User;
   plans: Plan[];
   actionLoading: string | null;
-  onAssign: (planId: string) => Promise<void>;
+  onAssign: (planId: string, billingCycle: 'monthly' | 'yearly') => Promise<void>;
   onStartTrial: (planId: string) => Promise<void>;
   onCancel: (subscriptionId: string) => Promise<void>;
 }) {
   const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -317,19 +322,32 @@ function SellerRow({ seller, plans, actionLoading, onAssign, onStartTrial, onCan
               <option value="">No plans available</option>
             ) : (
               plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>{plan.name} — {plan.price_monthly.toLocaleString()} Ks/mo</option>
+                <option key={plan.id} value={plan.id}>
+                  {plan.name} — {Number(plan.price_monthly ?? 0).toLocaleString()} Ks/mo • {Number(plan.price_yearly ?? 0).toLocaleString()} Ks/yr
+                </option>
               ))
             )}
           </select>
 
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              value={selectedCycle}
+              onChange={(e) => setSelectedCycle(e.target.value as 'monthly' | 'yearly')}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
             <button
               className="rounded-lg bg-purple-600 px-3 py-2 text-white text-sm hover:bg-purple-700 disabled:opacity-50"
               disabled={!selectedPlan || !!actionLoading}
-              onClick={async () => await onAssign(selectedPlan)}
+              onClick={async () => await onAssign(selectedPlan, selectedCycle)}
             >
               Assign
             </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             <button
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
               disabled={!selectedPlan || !!actionLoading}

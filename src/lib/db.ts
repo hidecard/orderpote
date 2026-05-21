@@ -4,6 +4,101 @@ import type { Product, ProductVariant, ProductImage, Review, Order, Wallet, User
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
 
+let plansSchemaEnsured = false;
+let subscriptionsSchemaEnsured = false;
+
+async function ensurePlansSchema(): Promise<void> {
+  if (plansSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS plans (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      price_monthly INTEGER DEFAULT 0,
+      price_yearly INTEGER DEFAULT 0,
+      trial_days INTEGER DEFAULT 10,
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+  });
+
+  const pragmaResult = await turso.execute({ sql: "PRAGMA table_info(plans)" });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('price_monthly')) {
+    await turso.execute({ sql: 'ALTER TABLE plans ADD COLUMN price_monthly INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('price_yearly')) {
+    await turso.execute({ sql: 'ALTER TABLE plans ADD COLUMN price_yearly INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('trial_days')) {
+    await turso.execute({ sql: 'ALTER TABLE plans ADD COLUMN trial_days INTEGER DEFAULT 10' });
+  }
+  if (!existingColumns.includes('description')) {
+    await turso.execute({ sql: 'ALTER TABLE plans ADD COLUMN description TEXT' });
+  }
+
+  plansSchemaEnsured = true;
+}
+
+async function ensureSubscriptionsSchema(): Promise<void> {
+  if (subscriptionsSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      plan_id TEXT NOT NULL,
+      starts_at DATETIME NOT NULL,
+      ends_at DATETIME NOT NULL,
+      status TEXT DEFAULT 'active',
+      is_trial BOOLEAN DEFAULT FALSE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+  });
+
+  const pragmaResult = await turso.execute({ sql: "PRAGMA table_info(subscriptions)" });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('user_id')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN user_id TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('plan_id')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN plan_id TEXT NOT NULL DEFAULT ""' });
+  }
+  if (!existingColumns.includes('starts_at')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN starts_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP' });
+  }
+  if (!existingColumns.includes('ends_at')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN ends_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP' });
+  }
+  if (!existingColumns.includes('status')) {
+    await turso.execute({ sql: "ALTER TABLE subscriptions ADD COLUMN status TEXT DEFAULT 'active'" });
+  }
+  if (!existingColumns.includes('is_trial')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN is_trial BOOLEAN DEFAULT FALSE' });
+  }
+  if (!existingColumns.includes('created_at')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
+  }
+  if (!existingColumns.includes('updated_at')) {
+    await turso.execute({ sql: 'ALTER TABLE subscriptions ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
+  }
+
+  subscriptionsSchemaEnsured = true;
+}
+
+const normalizePlan = (row: unknown) => {
+  const plan = row as Record<string, unknown>;
+  return {
+    ...plan,
+    price_monthly: Number(plan.price_monthly ?? 0),
+    price_yearly: Number(plan.price_yearly ?? 0),
+    trial_days: Number(plan.trial_days ?? 0),
+  } as unknown as Plan;
+};
+
 type CountRow = { count: number | string };
 type RevenueRow = { total: number | string | null };
 type SalesRow = { date: string; sales: number | string | null };
@@ -251,6 +346,8 @@ export async function getSellers(): Promise<User[]> {
 
 // Plans & Subscriptions
 export async function createPlan(plan: Omit<Plan, 'id' | 'created_at'>): Promise<Plan> {
+  await ensurePlansSchema();
+
   const id = `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
 
@@ -277,17 +374,21 @@ export async function deletePlan(planId: string): Promise<void> {
 }
 
 export async function getPlans(): Promise<Plan[]> {
+  await ensurePlansSchema();
   const result = await turso.execute({ sql: 'SELECT * FROM plans ORDER BY created_at DESC' });
-  return rowsAs<Plan>(result.rows);
+  return rowsAs<unknown>(result.rows).map(normalizePlan);
 }
 
 export async function getPlanById(planId: string): Promise<Plan | null> {
+  await ensurePlansSchema();
   const result = await turso.execute({ sql: 'SELECT * FROM plans WHERE id = ?', args: [planId] });
   if (result.rows.length === 0) return null;
-  return rowAs<Plan>(result.rows[0]);
+  return normalizePlan(result.rows[0]);
 }
 
 export async function createSubscription(subscription: Omit<Subscription, 'id' | 'created_at' | 'updated_at'>): Promise<Subscription> {
+  await ensureSubscriptionsSchema();
+
   const id = `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
 
@@ -300,6 +401,7 @@ export async function createSubscription(subscription: Omit<Subscription, 'id' |
 }
 
 export async function assignPlanToSeller(userId: string, planId: string, type: 'monthly' | 'yearly' | 'trial'): Promise<Subscription> {
+  await ensureSubscriptionsSchema();
   const now = new Date();
   const startsAt = now.toISOString();
   const plan = await getPlanById(planId);
@@ -345,6 +447,7 @@ export async function assignPlanToSeller(userId: string, planId: string, type: '
 }
 
 export async function getSellerSubscription(userId: string): Promise<Subscription | null> {
+  await ensureSubscriptionsSchema();
   const result = await turso.execute({ 
     sql: "SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1", 
     args: [userId] 
@@ -354,6 +457,8 @@ export async function getSellerSubscription(userId: string): Promise<Subscriptio
 }
 
 export async function getSellerSubscriptionWithPlan(userId: string): Promise<SubscriptionWithPlan | null> {
+  await ensurePlansSchema();
+  await ensureSubscriptionsSchema();
   const result = await turso.execute({
     sql: `SELECT s.*, p.name as plan_name, p.price_monthly as plan_price_monthly, p.price_yearly as plan_price_yearly
           FROM subscriptions s
@@ -367,6 +472,7 @@ export async function getSellerSubscriptionWithPlan(userId: string): Promise<Sub
 }
 
 export async function updateSubscriptionStatus(subscriptionId: string, status: 'active' | 'expired' | 'cancelled'): Promise<void> {
+  await ensureSubscriptionsSchema();
   await turso.execute({ 
     sql: 'UPDATE subscriptions SET status = ?, updated_at = ? WHERE id = ?', 
     args: [status, new Date().toISOString(), subscriptionId] 
@@ -374,6 +480,7 @@ export async function updateSubscriptionStatus(subscriptionId: string, status: '
 }
 
 export async function checkAndExpireSubscriptions(): Promise<number> {
+  await ensureSubscriptionsSchema();
   const now = new Date().toISOString();
   const result = await turso.execute({
     sql: "UPDATE subscriptions SET status = 'expired', updated_at = ? WHERE status = 'active' AND ends_at < ?",

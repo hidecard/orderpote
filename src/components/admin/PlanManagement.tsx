@@ -138,7 +138,7 @@ export default function PlanManagement() {
                 <input
                   type="number"
                   value={formData.trial_days}
-                  onChange={(e) => setFormData({ ...formData, trial_days: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, trial_days: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#1a7f8c] focus:bg-white outline-none font-medium"
                   placeholder="10"
                   min="1"
@@ -151,7 +151,7 @@ export default function PlanManagement() {
                 <input
                   type="number"
                   value={formData.price_monthly}
-                  onChange={(e) => setFormData({ ...formData, price_monthly: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#1a7f8c] focus:bg-white outline-none font-medium"
                   placeholder="0"
                   min="0"
@@ -164,7 +164,7 @@ export default function PlanManagement() {
                 <input
                   type="number"
                   value={formData.price_yearly}
-                  onChange={(e) => setFormData({ ...formData, price_yearly: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, price_yearly: e.target.value === '' ? 0 : Number(e.target.value) })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-[#1a7f8c] focus:bg-white outline-none font-medium"
                   placeholder="0"
                   min="0"
