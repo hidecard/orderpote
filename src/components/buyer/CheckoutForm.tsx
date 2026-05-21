@@ -240,256 +240,241 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   const availableTownships = customerRegion ? TOWNSHIPS_BY_REGION[customerRegion] || [] : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
-
-        {/* Order Summary */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-4">
-          <h2 className="font-semibold mb-3">Order Summary</h2>
-          <div className="flex gap-4">
-            <img
-              src={product.cover_image_url || 'https://via.placeholder.com/400x400?text=Product'}
-              alt={product.name}
-              className="w-20 h-20 object-cover rounded-lg"
-            />
-            <div className="flex-1">
-              <h3 className="font-semibold">{product.name}</h3>
-              <p className="text-sm text-gray-600">{variant.name}</p>
-              <p className="text-sm text-gray-600">Quantity: {quantity}</p>
-              {discountAmount > 0 ? (
-                <div className="space-y-1">
-                  <p className="text-sm text-gray-500 line-through">{totalPrice.toLocaleString()} Ks</p>
-                  <p className="text-lg font-bold text-purple-600">{finalPrice.toLocaleString()} Ks</p>
-                </div>
-              ) : (
-                <p className="text-lg font-bold text-purple-600 mt-2">
-                  {totalPrice.toLocaleString()} Ks
-                </p>
-              )}
-            </div>
+    <div className="min-h-screen bg-[#f8fbfc] py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8 rounded-[2rem] bg-white shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-[#1a7f8c] px-6 py-8 text-white">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#d7f0f5]">OrderPote Checkout</p>
+            <h1 className="mt-4 text-4xl font-black leading-tight">
+              အော်ဒါ စာမျက်နှာ
+            </h1>
           </div>
-        </div>
-
-        {/* Payment Information */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-4">
-          <h2 className="font-semibold mb-3">Payment Information</h2>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-semibold text-purple-900">{primaryWallet.provider}</span>
-              <span className="text-sm text-purple-700">Primary Account</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Account Name</p>
-                <p className="font-semibold">{primaryWallet.account_name}</p>
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] p-6 lg:p-8 bg-white">
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-gray-200 bg-[#ffffff] p-6 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-3">အော်ဒါအကျဉ်းချုံး</h2>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={product.cover_image_url || 'https://via.placeholder.com/400x400?text=Product'}
+                    alt={product.name}
+                    className="w-28 h-28 object-cover rounded-3xl border border-gray-100"
+                  />
+                  <div className="flex-1">
+                    <p className="text-lg font-semibold text-gray-900">{product.name}</p>
+                    <p className="text-sm text-gray-500 mt-1">{variant.name}</p>
+                    <p className="text-sm text-gray-500">အရေအတွက်: {quantity}</p>
+                  </div>
+                </div>
+                <div className="mt-6 rounded-3xl bg-[#eaf8fb] p-4 border border-[#d4f1f5]">
+                  <p className="text-sm text-gray-600">စုစုပေါင်း</p>
+                  {discountAmount > 0 ? (
+                    <div className="mt-2 flex items-end gap-3">
+                      <p className="text-xl text-gray-500 line-through">{totalPrice.toLocaleString()} Ks</p>
+                      <p className="text-3xl font-black text-[#1a7f8c]">{finalPrice.toLocaleString()} Ks</p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-3xl font-black text-[#1a7f8c]">{totalPrice.toLocaleString()} Ks</p>
+                  )}
+                  {discountAmount > 0 && (
+                    <p className="mt-3 text-sm text-green-700">လျှော့စျေး: {discountAmount.toLocaleString()} Ks</p>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Account Number</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold">{primaryWallet.account_number}</p>
-                  <button
-                    onClick={handleCopyAccountNumber}
-                    className="p-1 bg-purple-200 rounded hover:bg-purple-300 transition-colors"
-                  >
-                    {copied ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-purple-600" />
+
+              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-3">ငွေပေးချေမှု အချက်အလက်</h2>
+                <div className="rounded-3xl bg-[#f0fbfd] p-4 border border-[#d4f1f5]">
+                  <div className="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">ဘဏ်အမည်</p>
+                      <p className="font-semibold text-gray-900">{primaryWallet.account_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">အကောင့်နံပါတ်</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">{primaryWallet.account_number}</p>
+                        <button
+                          onClick={handleCopyAccountNumber}
+                          className="rounded-full bg-[#1a7f8c] p-2 text-white hover:bg-[#156a75] transition-colors"
+                        >
+                          {copied ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {primaryWallet.provider} မှဖြင့် {finalPrice.toLocaleString()} Ks ကို ငွေလွှဲပါ။
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">ဝယ်သူ အချက်အလက်</h2>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Coupon Code</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value);
+                          setAppliedCoupon(null);
+                          setDiscountAmount(0);
+                          setCouponError('');
+                        }}
+                        className="flex-1 rounded-2xl border border-gray-300 bg-[#f7fcfd] px-4 py-3 text-sm focus:border-[#1a7f8c] focus:outline-none focus:ring-2 focus:ring-[#b8f0f6]"
+                        placeholder="Coupon code ရိုက်ထည့်ပါ"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode.trim()}
+                        className="rounded-2xl bg-[#1a7f8c] px-4 py-3 text-sm font-bold text-white hover:bg-[#156a75] disabled:opacity-50"
+                      >
+                        {couponLoading ? 'စစ်ဆေးနေသည်...' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponError && <p className="text-sm text-red-600 mt-2">{couponError}</p>}
+                    {appliedCoupon && !couponError && (
+                      <p className="text-sm text-green-700 mt-2">{appliedCoupon.discount_percentage}% လျော့စျေးအသုံးပြုထားသည်</p>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">အမည် *</label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="w-full rounded-2xl border border-gray-300 bg-[#f7fcfd] px-4 py-3 text-sm focus:border-[#1a7f8c] focus:outline-none focus:ring-2 focus:ring-[#b8f0f6]"
+                      placeholder="သင့်အမည်"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ဖုန်းနံပါတ် *</label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      className="w-full rounded-2xl border border-gray-300 bg-[#f7fcfd] px-4 py-3 text-sm focus:border-[#1a7f8c] focus:outline-none focus:ring-2 focus:ring-[#b8f0f6]"
+                      placeholder="09xxxxxxxxx"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">တိုင်းဒေသကြီး *</label>
+                      <select
+                        value={customerRegion}
+                        onChange={(e) => {
+                          setCustomerRegion(e.target.value);
+                          setCustomerTownship('');
+                        }}
+                        className="w-full rounded-2xl border border-gray-300 bg-[#f7fcfd] px-4 py-3 text-sm focus:border-[#1a7f8c] focus:outline-none focus:ring-2 focus:ring-[#b8f0f6]"
+                        required
+                      >
+                        <option value="">တိုင်းဒေသကြီး ရွေးပါ</option>
+                        {MYANMAR_REGIONS.map((region) => (
+                          <option key={region.id} value={region.id}>
+                            {region.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">မြို့နယ် *</label>
+                      <select
+                        value={customerTownship}
+                        onChange={(e) => setCustomerTownship(e.target.value)}
+                        className="w-full rounded-2xl border border-gray-300 bg-[#f7fcfd] px-4 py-3 text-sm focus:border-[#1a7f8c] focus:outline-none focus:ring-2 focus:ring-[#b8f0f6]"
+                        disabled={!customerRegion}
+                        required
+                      >
+                        <option value="">မြို့နယ် ရွေးပါ</option>
+                        {availableTownships.map((township) => (
+                          <option key={township} value={township}>
+                            {township}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">လိပ်စာ *</label>
+                    <textarea
+                      value={customerAddress}
+                      onChange={(e) => setCustomerAddress(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-2xl border border-gray-300 bg-[#f7fcfd] px-4 py-3 text-sm focus:border-[#1a7f8c] focus:outline-none focus:ring-2 focus:ring-[#b8f0f6]"
+                      placeholder="လိပ်စာ၊ အဆောက်အအုံ၊ အခန်းနံပါတ်"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ငွေလွှဲ Screenshot *</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-3xl p-6 text-center hover:border-[#1a7f8c] transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="screenshot-upload"
+                      />
+                      <label htmlFor="screenshot-upload" className="cursor-pointer flex flex-col items-center gap-3">
+                        {screenshotPreview ? (
+                          <div className="relative">
+                            <img
+                              src={screenshotPreview}
+                              alt="Payment Screenshot"
+                              className="max-h-48 rounded-3xl"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setPaymentScreenshot(null);
+                                setScreenshotPreview('');
+                              }}
+                              className="absolute top-2 right-2 rounded-full bg-red-500 p-2 text-white hover:bg-red-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-12 h-12 text-gray-400" />
+                            <p className="text-gray-600 font-semibold">Screenshot တင်ပါ</p>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !paymentScreenshot}
+                    className="w-full rounded-3xl bg-[#1a7f8c] px-6 py-4 text-base font-black text-white hover:bg-[#156a75] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? 'တင်ပြနေသည်...' : 'အော်ဒါတင်မည်'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-3">
-            Copy the account number and transfer {finalPrice.toLocaleString()} Ks via {primaryWallet.provider}
-          </p>
-          {discountAmount > 0 && (
-            <p className="text-sm text-green-700 mt-2">
-              Discount applied: {discountAmount.toLocaleString()} Ks off ({appliedCoupon?.discount_percentage}% coupon)
-            </p>
-          )}
         </div>
-
-        {/* Checkout Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-4 space-y-4">
-          <h2 className="font-semibold mb-3">Customer Information</h2>
-
-          <div className="grid gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Coupon Code
-              </label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(e) => {
-                    setCouponCode(e.target.value);
-                    setAppliedCoupon(null);
-                    setDiscountAmount(0);
-                    setCouponError('');
-                  }}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Enter coupon code"
-                />
-                <button
-                  type="button"
-                  onClick={handleApplyCoupon}
-                  disabled={couponLoading || !couponCode.trim()}
-                  className="rounded-lg bg-purple-600 px-4 py-3 text-white text-sm hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {couponLoading ? 'Checking...' : 'Apply'}
-                </button>
-              </div>
-              {couponError && <p className="text-sm text-red-600 mt-2">{couponError}</p>}
-              {appliedCoupon && !couponError && (
-                <p className="text-sm text-green-700 mt-2">Coupon applied: {appliedCoupon.discount_percentage}% off</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Your full name"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="09xxxxxxxxx"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Region/State *
-              </label>
-              <select
-                value={customerRegion}
-                onChange={(e) => {
-                  setCustomerRegion(e.target.value);
-                  setCustomerTownship('');
-                }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                required
-              >
-                <option value="">Select region...</option>
-                {MYANMAR_REGIONS.map((region) => (
-                  <option key={region.id} value={region.id}>
-                    {region.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Township *
-              </label>
-              <select
-                value={customerTownship}
-                onChange={(e) => setCustomerTownship(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                disabled={!customerRegion}
-                required
-              >
-                <option value="">Select township...</option>
-                {availableTownships.map((township) => (
-                  <option key={township} value={township}>
-                    {township}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Address *
-            </label>
-            <textarea
-              value={customerAddress}
-              onChange={(e) => setCustomerAddress(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Street address, building, floor, etc."
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Payment Screenshot *
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                id="screenshot-upload"
-              />
-              <label
-                htmlFor="screenshot-upload"
-                className="cursor-pointer flex flex-col items-center"
-              >
-                {screenshotPreview ? (
-                  <div className="relative">
-                    <img
-                      src={screenshotPreview}
-                      alt="Payment Screenshot"
-                      className="max-h-48 rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPaymentScreenshot(null);
-                        setScreenshotPreview('');
-                      }}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="w-12 h-12 text-gray-400 mb-2" />
-                    <p className="text-gray-600">Upload payment screenshot</p>
-                    <p className="text-sm text-gray-500">Image will be compressed automatically</p>
-                  </>
-                )}
-              </label>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting || !paymentScreenshot}
-            className="w-full bg-purple-600 text-white py-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Submitting Order...' : 'Submit Order'}
-          </button>
-        </form>
       </div>
     </div>
   );
