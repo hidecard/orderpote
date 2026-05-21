@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Copy, Upload, X, CheckCircle } from 'lucide-react';
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
-import type { Product, ProductVariant, Wallet } from '../../lib/schema';
-import { getProductBySlug, getProductVariants, getPrimaryWallet, createOrder, validateCouponCode } from '../../lib/db';
+import type { Product, ProductVariant, Wallet, Store } from '../../lib/schema';
+import { getProductBySlug, getProductVariants, getPrimaryWallet, getStoreByUserId, createOrder, validateCouponCode } from '../../lib/db';
 
 interface CheckoutFormProps {
   productSlug: string;
@@ -15,6 +15,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   const [product, setProduct] = useState<Product | null>(null);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [primaryWallet, setPrimaryWallet] = useState<Wallet | null>(null);
+  const [store, setStore] = useState<Store | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerRegion, setCustomerRegion] = useState('');
@@ -41,9 +42,11 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         const variantData = variantsData.find(v => v.id === variantId) || variantsData[0];
         
         const walletData = await getPrimaryWallet(productData.user_id);
+        const storeData = await getStoreByUserId(productData.user_id);
         setProduct(productData);
         setVariant(variantData || null);
         setPrimaryWallet(walletData);
+        setStore(storeData);
       } catch (error) {
         console.error('Error fetching checkout data:', error);
       } finally {
@@ -248,6 +251,19 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
             <h1 className="mt-4 text-4xl font-black leading-tight">
               အော်ဒါ စာမျက်နှာ
             </h1>
+            <div className="mt-6 flex items-center gap-4 rounded-3xl bg-white/10 p-4">
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl bg-white">
+                <img
+                  src={store?.logo_url || '/logo.png'}
+                  alt={store?.name ? `${store.name} logo` : 'Shop logo'}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-[#d7f0f5]">Shop</p>
+                <p className="text-xl font-semibold text-white">{store?.name || 'Seller Store'}</p>
+              </div>
+            </div>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] p-6 lg:p-8 bg-white">
             <div className="space-y-6">
