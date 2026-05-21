@@ -1,8 +1,9 @@
-import { DollarSign, ShoppingCart, Clock, Eye } from 'lucide-react';
+import { DollarSign, ShoppingCart, Clock, Eye, CreditCard, AlertCircle } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
-import { getDashboardStats, getSalesData, getTopProducts, getLeastSellingProducts, getLowStockVariants } from '../../lib/db';
+import { getDashboardStats, getSalesData, getTopProducts, getLeastSellingProducts, getLowStockVariants, getSellerSubscriptionWithPlan } from '../../lib/db';
 import { useAuth } from '../../context/AuthContext';
+import type { SubscriptionWithPlan } from '../../lib/schema';
 
 type SalesDataPoint = { name: string; sales: number };
 type TopProductDataPoint = { name: string; value: number; color: string };
@@ -21,6 +22,7 @@ export default function Dashboard() {
   // productViews removed from dashboard (moved to dedicated page)
   const [leastProducts, setLeastProducts] = useState<TopProductDataPoint[]>([]);
   const [lowStock, setLowStock] = useState<{ variant_id: string; product_name: string; variant_name: string; stock: number }[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,12 +33,13 @@ export default function Dashboard() {
       }
 
       try {
-        const [stats, sales, topProducts, least, low] = await Promise.all([
+        const [stats, sales, topProducts, least, low, sub] = await Promise.all([
           getDashboardStats(user.id),
           getSalesData(user.id, 7),
           getTopProducts(user.id, 5),
           getLeastSellingProducts(user.id, 5),
           getLowStockVariants(user.id, 5),
+          getSellerSubscriptionWithPlan(user.id),
         ]);
 
         setKpiData(stats);
@@ -44,6 +47,7 @@ export default function Dashboard() {
         setTopProductsData(topProducts);
         setLeastProducts(least);
         setLowStock(low);
+        setSubscription(sub);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -62,9 +66,78 @@ export default function Dashboard() {
     );
   }
 
+  // Calculate days remaining for subscription/trial
+  const getDaysRemaining = () => {
+    if (!subscription) return null;
+    const now = new Date();
+    const ends = new Date(subscription.ends_at);
+    const daysRemaining = Math.ceil((ends.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, daysRemaining);
+  };
+
+  const daysRemaining = getDaysRemaining();
+  const isExpiringSoon = daysRemaining !== null && daysRemaining <= 7;
+  const isExpired = daysRemaining !== null && daysRemaining <= 0;
+
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+
+      {/* Subscription Status Alert */}
+      {subscription && (
+        <div className={`mb-6 rounded-xl p-4 flex items-start gap-4 border ${
+          isExpired 
+            ? 'bg-red-50 border-red-200' 
+            : isExpiringSoon 
+            ? 'bg-yellow-50 border-yellow-200'
+            : 'bg-blue-50 border-blue-200'
+        }`}>
+          <div className={`p-2 rounded-lg ${
+            isExpired
+              ? 'bg-red-100'
+              : isExpiringSoon
+              ? 'bg-yellow-100'
+              : 'bg-blue-100'
+          }`}>
+            {isExpired ? (
+              <AlertCircle className={`w-6 h-6 ${
+                isExpired ? 'text-red-600' : isExpiringSoon ? 'text-yellow-600' : 'text-blue-600'
+              }`} />
+            ) : (
+              <CreditCard className={`w-6 h-6 ${
+                isExpiringSoon ? 'text-yellow-600' : 'text-blue-600'
+              }`} />
+            )}
+          </div>
+          <div className="flex-1">
+            <h3 className={`font-bold ${
+              isExpired
+                ? 'text-red-900'
+                : isExpiringSoon
+                ? 'text-yellow-900'
+                : 'text-blue-900'
+            }`}>
+              {subscription.is_trial ? 'Trial' : 'Subscription'} Status
+            </h3>
+            <p className={`text-sm mt-1 ${
+              isExpired
+                ? 'text-red-700'
+                : isExpiringSoon
+                ? 'text-yellow-700'
+                : 'text-blue-700'
+            }`}>
+              {isExpired ? (
+                <>Your {subscription.is_trial ? 'trial' : 'subscription'} has expired. Please renew to continue using the platform.</>
+              ) : (
+                <>
+                  <strong>{subscription.plan_name}</strong> - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining
+                  {isExpiringSoon && ' - Expiring soon!'}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

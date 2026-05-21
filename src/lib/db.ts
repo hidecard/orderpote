@@ -255,11 +255,25 @@ export async function createPlan(plan: Omit<Plan, 'id' | 'created_at'>): Promise
   const now = new Date().toISOString();
 
   await turso.execute({
-    sql: 'INSERT INTO plans (id, name, price_per_month, description, trial_days, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    args: [id, plan.name, plan.price_per_month || 0, plan.description || null, plan.trial_days || 0, now],
+    sql: 'INSERT INTO plans (id, name, price_monthly, price_yearly, trial_days, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    args: [id, plan.name, plan.price_monthly || 0, plan.price_yearly || 0, plan.trial_days || 10, plan.description || null, now],
   });
 
   return { ...plan, id, created_at: now } as Plan;
+}
+
+export async function updatePlan(planId: string, plan: Partial<Omit<Plan, 'id' | 'created_at'>>): Promise<void> {
+  const fields = Object.keys(plan).map(key => `${key} = ?`).join(', ');
+  const args = [...Object.values(plan), planId];
+  
+  await turso.execute({
+    sql: `UPDATE plans SET ${fields} WHERE id = ?`,
+    args,
+  });
+}
+
+export async function deletePlan(planId: string): Promise<void> {
+  await turso.execute({ sql: 'DELETE FROM plans WHERE id = ?', args: [planId] });
 }
 
 export async function getPlans(): Promise<Plan[]> {
@@ -278,40 +292,51 @@ export async function createSubscription(subscription: Omit<Subscription, 'id' |
   const now = new Date().toISOString();
 
   await turso.execute({
-    sql: 'INSERT INTO subscriptions (id, user_id, plan_id, starts_at, ends_at, is_active, is_trial, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    args: [id, subscription.user_id, subscription.plan_id, subscription.starts_at, subscription.ends_at, subscription.is_active ? 1 : 0, subscription.is_trial ? 1 : 0, now, now],
+    sql: 'INSERT INTO subscriptions (id, user_id, plan_id, starts_at, ends_at, status, is_trial, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, subscription.user_id, subscription.plan_id, subscription.starts_at, subscription.ends_at, subscription.status, subscription.is_trial ? 1 : 0, now, now],
   });
 
   return { ...subscription, id, created_at: now, updated_at: now } as Subscription;
 }
 
-export async function assignPlanToSeller(userId: string, planId: string, trialDays?: number): Promise<Subscription> {
+export async function assignPlanToSeller(userId: string, planId: string, type: 'monthly' | 'yearly' | 'trial'): Promise<Subscription> {
   const now = new Date();
   const startsAt = now.toISOString();
+  const plan = await getPlanById(planId);
+  if (!plan) throw new Error('Plan not found');
 
   let ends = new Date(now);
-  if (trialDays && trialDays > 0) {
-    ends.setDate(ends.getDate() + trialDays);
+  if (type === 'trial') {
+    ends.setDate(ends.getDate() + plan.trial_days);
+  } else if (type === 'yearly') {
+    ends.setFullYear(ends.getFullYear() + 1);
   } else {
-    // default monthly subscription
     ends.setMonth(ends.getMonth() + 1);
   }
+
+  // Deactivate old subscriptions
+  await turso.execute({
+    sql: "UPDATE subscriptions SET status = 'expired', updated_at = ? WHERE user_id = ? AND status = 'active'",
+    args: [new Date().toISOString(), userId],
+  });
 
   const subscription = await createSubscription({
     user_id: userId,
     plan_id: planId,
     starts_at: startsAt,
     ends_at: ends.toISOString(),
-    is_active: true,
-    is_trial: !!(trialDays && trialDays > 0),
+    status: 'active',
+    is_trial: type === 'trial',
   });
 
   // Notify seller
   await createNotification({
     user_id: userId,
     type: 'plan_assigned',
-    title: 'Subscription Assigned',
-    message: `You have been assigned the "${(await getPlanById(planId))?.name || 'plan'}" plan.`,
+    title: type === 'trial' ? 'Trial Started' : 'Subscription Activated',
+    message: type === 'trial' 
+      ? `You have started a ${plan.trial_days}-day trial of the "${plan.name}" plan.`
+      : `You have successfully subscribed to the "${plan.name}" plan (${type}).`,
     is_read: false,
     related_id: subscription.id,
   });
@@ -320,17 +345,20 @@ export async function assignPlanToSeller(userId: string, planId: string, trialDa
 }
 
 export async function getSellerSubscription(userId: string): Promise<Subscription | null> {
-  const result = await turso.execute({ sql: 'SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 1', args: [userId] });
+  const result = await turso.execute({ 
+    sql: "SELECT * FROM subscriptions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1", 
+    args: [userId] 
+  });
   if (result.rows.length === 0) return null;
   return rowAs<Subscription>(result.rows[0]);
 }
 
 export async function getSellerSubscriptionWithPlan(userId: string): Promise<SubscriptionWithPlan | null> {
   const result = await turso.execute({
-    sql: `SELECT s.*, p.name as plan_name, p.price_per_month as plan_price_per_month
+    sql: `SELECT s.*, p.name as plan_name, p.price_monthly as plan_price_monthly, p.price_yearly as plan_price_yearly
           FROM subscriptions s
           LEFT JOIN plans p ON s.plan_id = p.id
-          WHERE s.user_id = ? AND s.is_active = 1
+          WHERE s.user_id = ? AND s.status = 'active'
           ORDER BY s.created_at DESC LIMIT 1`,
     args: [userId],
   });
@@ -338,12 +366,20 @@ export async function getSellerSubscriptionWithPlan(userId: string): Promise<Sub
   return rowAs<SubscriptionWithPlan>(result.rows[0]);
 }
 
-export async function updateSubscriptionEnds(subscriptionId: string, newEndsAt: string): Promise<void> {
-  await turso.execute({ sql: 'UPDATE subscriptions SET ends_at = ?, updated_at = ? WHERE id = ?', args: [newEndsAt, new Date().toISOString(), subscriptionId] });
+export async function updateSubscriptionStatus(subscriptionId: string, status: 'active' | 'expired' | 'cancelled'): Promise<void> {
+  await turso.execute({ 
+    sql: 'UPDATE subscriptions SET status = ?, updated_at = ? WHERE id = ?', 
+    args: [status, new Date().toISOString(), subscriptionId] 
+  });
 }
 
-export async function cancelSubscription(subscriptionId: string): Promise<void> {
-  await turso.execute({ sql: 'UPDATE subscriptions SET is_active = 0, updated_at = ? WHERE id = ?', args: [new Date().toISOString(), subscriptionId] });
+export async function checkAndExpireSubscriptions(): Promise<number> {
+  const now = new Date().toISOString();
+  const result = await turso.execute({
+    sql: "UPDATE subscriptions SET status = 'expired', updated_at = ? WHERE status = 'active' AND ends_at < ?",
+    args: [now, now],
+  });
+  return result.rowsAffected;
 }
 
 export async function getSalesData(userId: string, days: number = 7) {

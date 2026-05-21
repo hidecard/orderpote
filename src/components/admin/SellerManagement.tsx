@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSellers, getPlans, getSellerSubscriptionWithPlan, assignPlanToSeller, cancelSubscription, createPlan } from '../../lib/db';
+import { getSellers, getPlans, getSellerSubscriptionWithPlan, assignPlanToSeller, updateSubscriptionStatus, createPlan } from '../../lib/db';
 import type { User, Plan, SubscriptionWithPlan } from '../../lib/schema';
 
 export default function SellerManagement() {
@@ -7,7 +7,7 @@ export default function SellerManagement() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [newPlan, setNewPlan] = useState({ name: '', price_per_month: 0, trial_days: 10, description: '' });
+  const [newPlan, setNewPlan] = useState({ name: '', price_monthly: 0, price_yearly: 0, trial_days: 10, description: '' });
   const [planCreating, setPlanCreating] = useState(false);
 
   useEffect(() => {
@@ -55,11 +55,12 @@ export default function SellerManagement() {
     try {
       await createPlan({
         name: newPlan.name,
-        price_per_month: newPlan.price_per_month,
+        price_monthly: newPlan.price_monthly,
+        price_yearly: newPlan.price_yearly,
         description: newPlan.description,
         trial_days: newPlan.trial_days,
       });
-      setNewPlan({ name: '', price_per_month: 0, trial_days: 10, description: '' });
+      setNewPlan({ name: '', price_monthly: 0, price_yearly: 0, trial_days: 10, description: '' });
       await refreshPlans();
       alert('Plan created successfully');
     } catch (err) {
@@ -74,7 +75,7 @@ export default function SellerManagement() {
     if (!confirm('Assign this plan to the seller?')) return;
     setActionLoading(userId);
     try {
-      await assignPlanToSeller(userId, planId);
+      await assignPlanToSeller(userId, planId, 'monthly');
       alert('Plan assigned');
       await refreshSellers();
     } catch (err) {
@@ -89,7 +90,7 @@ export default function SellerManagement() {
     if (!confirm('Start a 10-day trial for this seller?')) return;
     setActionLoading(userId);
     try {
-      await assignPlanToSeller(userId, planId, 10);
+      await assignPlanToSeller(userId, planId, 'trial');
       alert('Trial started for 10 days');
       await refreshSellers();
     } catch (err) {
@@ -104,7 +105,7 @@ export default function SellerManagement() {
     if (!confirm('Cancel this subscription?')) return;
     setActionLoading(subscriptionId);
     try {
-      await cancelSubscription(subscriptionId);
+      await updateSubscriptionStatus(subscriptionId, 'cancelled');
       alert('Subscription cancelled');
       await refreshSellers();
     } catch (err) {
@@ -173,22 +174,32 @@ export default function SellerManagement() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price / month</label>
                   <input
                     type="number"
-                    value={newPlan.price_per_month}
-                    onChange={(e) => setNewPlan({ ...newPlan, price_per_month: Number(e.target.value) })}
+                    value={newPlan.price_monthly}
+                    onChange={(e) => setNewPlan({ ...newPlan, price_monthly: Number(e.target.value) })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
                     placeholder="0"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Trial Days</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price / year</label>
                   <input
                     type="number"
-                    value={newPlan.trial_days}
-                    onChange={(e) => setNewPlan({ ...newPlan, trial_days: Number(e.target.value) })}
+                    value={newPlan.price_yearly}
+                    onChange={(e) => setNewPlan({ ...newPlan, price_yearly: Number(e.target.value) })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                    placeholder="10"
+                    placeholder="0"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Trial Days</label>
+                <input
+                  type="number"
+                  value={newPlan.trial_days}
+                  onChange={(e) => setNewPlan({ ...newPlan, trial_days: Number(e.target.value) })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                  placeholder="10"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -224,7 +235,7 @@ export default function SellerManagement() {
                         <div className="text-sm text-gray-500">{plan.description || 'No description'}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-semibold">{plan.price_per_month.toLocaleString()} Ks / mo</div>
+                        <div className="text-lg font-semibold">{plan.price_monthly.toLocaleString()} Ks / mo</div>
                         <div className="text-sm text-gray-500">Trial: {plan.trial_days} days</div>
                       </div>
                     </div>
@@ -306,7 +317,7 @@ function SellerRow({ seller, plans, actionLoading, onAssign, onStartTrial, onCan
               <option value="">No plans available</option>
             ) : (
               plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>{plan.name} — {plan.price_per_month.toLocaleString()} Ks/mo</option>
+                <option key={plan.id} value={plan.id}>{plan.name} — {plan.price_monthly.toLocaleString()} Ks/mo</option>
               ))
             )}
           </select>

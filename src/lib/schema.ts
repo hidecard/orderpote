@@ -146,18 +146,44 @@ CREATE TABLE IF NOT EXISTS reviews (
 );
 
 -- Notifications
-CREATE TABLE IF NOT EXISTS notifications (
-  id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  is_read BOOLEAN DEFAULT FALSE,
-  related_id TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-*/
+	CREATE TABLE IF NOT EXISTS notifications (
+	  id TEXT PRIMARY KEY,
+	  user_id TEXT NOT NULL,
+	  type TEXT NOT NULL,
+	  title TEXT NOT NULL,
+	  message TEXT NOT NULL,
+	  is_read BOOLEAN DEFAULT FALSE,
+	  related_id TEXT,
+	  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	);
+
+	-- Plans
+	CREATE TABLE IF NOT EXISTS plans (
+	  id TEXT PRIMARY KEY,
+	  name TEXT NOT NULL,
+	  price_monthly INTEGER NOT NULL,
+	  price_yearly INTEGER NOT NULL,
+	  trial_days INTEGER DEFAULT 10,
+	  description TEXT,
+	  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	-- Subscriptions
+	CREATE TABLE IF NOT EXISTS subscriptions (
+	  id TEXT PRIMARY KEY,
+	  user_id TEXT NOT NULL,
+	  plan_id TEXT NOT NULL,
+	  starts_at DATETIME NOT NULL,
+	  ends_at DATETIME NOT NULL,
+	  status TEXT DEFAULT 'active', -- active, expired, cancelled
+	  is_trial BOOLEAN DEFAULT FALSE,
+	  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+	  FOREIGN KEY (user_id) REFERENCES users(id),
+	  FOREIGN KEY (plan_id) REFERENCES plans(id)
+	);
+	*/
 
 export interface User {
   id: string;
@@ -219,30 +245,32 @@ export interface ProductImage {
 }
 
 export interface Plan {
-  id: string;
-  name: string;
-  price_per_month: number;
-  description?: string;
-  trial_days?: number;
-  created_at: string;
-}
-
-export interface Subscription {
-  id: string;
-  user_id: string;
-  plan_id: string;
-  starts_at: string;
-  ends_at: string;
-  is_active: boolean;
-  is_trial: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SubscriptionWithPlan extends Subscription {
-  plan_name?: string;
-  plan_price_per_month?: number;
-}
+	  id: string;
+	  name: string;
+	  price_monthly: number;
+	  price_yearly: number;
+	  trial_days: number;
+	  description?: string;
+	  created_at: string;
+	}
+	
+	export interface Subscription {
+	  id: string;
+	  user_id: string;
+	  plan_id: string;
+	  starts_at: string;
+	  ends_at: string;
+	  status: 'active' | 'expired' | 'cancelled';
+	  is_trial: boolean;
+	  created_at: string;
+	  updated_at: string;
+	}
+	
+	export interface SubscriptionWithPlan extends Subscription {
+	  plan_name?: string;
+	  plan_price_monthly?: number;
+	  plan_price_yearly?: number;
+	}
 
 export interface ProductVariant {
   id: string;
