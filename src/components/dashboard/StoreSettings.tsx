@@ -211,22 +211,33 @@ export default function StoreSettings() {
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
-                  placeholder":"အဝတ်အထည်၊ အစားအသောက် စသည်"
+                  placeholder="အဝတ်အထည်၊ အစားအသောက် စသည်"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  လိုဂို URL (ရွေးချယ်နိုင်သည်)
+                  လိုဂို (ရွေးချယ်နိုင်သည်)
                 </label>
                 <input
-                  type="url"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setLogoUrl(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
-                  placeholder="https://example.com/logo.png"
                 />
+                {logoUrl && (
+                  <img src={logoUrl} alt="Logo preview" className="mt-2 h-20 w-auto rounded" />
+                )}
               </div>
             </div>
 
