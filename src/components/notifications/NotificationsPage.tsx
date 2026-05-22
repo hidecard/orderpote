@@ -74,7 +74,7 @@ export default function NotificationsPage() {
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a7f8c]"></div>
       </div>
     );
   }
@@ -83,22 +83,22 @@ export default function NotificationsPage() {
     <div className="p-6">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-600 mt-1">Your latest notifications from orders, products, and inventory.</p>
+          <h1 className="text-3xl font-bold text-gray-900">အကြောင်းကြားချက်များ</h1>
+          <p className="text-gray-600 mt-1">အော်ဒါများ၊ ပစ္စည်းများနှင့် စတော့မှ သင့်နောက်ဆုံး အကြောင်းကြားချက်များ</p>
         </div>
         <button
           type="button"
           onClick={handleMarkAllRead}
           disabled={isUpdating || notifications.length === 0}
-          className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-lg bg-[#1a7f8c] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#156a75] disabled:opacity-50"
         >
-          Mark all read
+          အားလုံးဖတ်ပြီးဟု မှတ်ယူမည်
         </button>
       </div>
 
       {notifications.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
-          No notifications yet.
+          အကြောင်းကြားချက်မရှိသေးပါ။
         </div>
       ) : (
         <div className="space-y-4">
@@ -106,13 +106,13 @@ export default function NotificationsPage() {
             <div
               key={notification.id}
               className={`rounded-2xl border p-5 shadow-sm transition ${
-                notification.is_read ? 'border-gray-200 bg-white' : 'border-purple-200 bg-purple-50'
+                notification.is_read ? 'border-gray-200 bg-white' : 'border-[#1a7f8c]/30 bg-[#1a7f8c]/10'
               }`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
-                    <span className="rounded-full bg-purple-100 px-3 py-1 text-purple-700">
+                    <span className="rounded-full bg-[#1a7f8c]/10 px-3 py-1 text-[#1a7f8c]">
                       {notification.type.replace('_', ' ').toUpperCase()}
                     </span>
                     <span>{new Date(notification.created_at).toLocaleString()}</span>
@@ -126,17 +126,17 @@ export default function NotificationsPage() {
                       type="button"
                       onClick={() => handleMarkRead(notification.id)}
                       disabled={isUpdating}
-                      className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-purple-600 ring-1 ring-purple-200 hover:bg-purple-50"
+                      className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[#1a7f8c] ring-1 ring-[#1a7f8c]/30 hover:bg-[#1a7f8c]/10"
                     >
-                      Mark read
+                      ဖတ်ပြီးဟု မှတ်ယူမည်
                     </button>
                   )}
                   {buildLink(notification) && (
                     <a
                       href={buildLink(notification)}
-                      className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
+                      className="rounded-lg bg-[#1a7f8c] px-4 py-2 text-sm font-semibold text-white hover:bg-[#156a75]"
                     >
-                      View
+                      ကြည့်ရှုမည်
                     </a>
                   )}
                 </div>

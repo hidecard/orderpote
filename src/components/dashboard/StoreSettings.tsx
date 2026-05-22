@@ -104,7 +104,7 @@ export default function StoreSettings() {
   if (isFetching) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a7f8c]"></div>
       </div>
     );
   }
@@ -113,8 +113,8 @@ export default function StoreSettings() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-md p-6 max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Store Not Found</h1>
-          <p className="text-gray-600">You don't have a store yet. Please create one first.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">ဆိုင်မတွေ့ပါ</h1>
+          <p className="text-gray-600">သင့်ဆိုင်မရှိသေးပါ။ ဦးစွာ ဖန်တီးပါ။</p>
         </div>
       </div>
     );
@@ -130,17 +130,17 @@ export default function StoreSettings() {
           >
             <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Store Settings</h1>
+          <h1 className="text-2xl font-bold text-gray-900">ဆိုင်ဆက်တင်များ</h1>
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Store className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-[#1a7f8c]/10 rounded-lg">
+              <Store className="w-6 h-6 text-[#1a7f8c]" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold">Edit Store Information</h2>
-              <p className="text-sm text-gray-600">Update your store details</p>
+              <h2 className="text-lg font-semibold">ဆိုင်အချက်အလက် ပြင်ဆင်မည်</h2>
+              <p className="text-sm text-gray-600">သင့်ဆိုင်အသေးစိတ် အပ်ဒိတ်လုပ်ပါ</p>
             </div>
           </div>
 
@@ -159,14 +159,14 @@ export default function StoreSettings() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Store Name *
+                ဆိုင်အမည် *
               </label>
               <input
                 type="text"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="My Awesome Shop"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+                placeholder="ကျွန်ုပ်၏ စတိုးဆိုင်"
                 required
               />
             </div>
@@ -174,27 +174,27 @@ export default function StoreSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Person *
+                  ဆက်သွယ်ရမည့်သူ *
                 </label>
                 <input
                   type="text"
                   value={contactPerson}
                   onChange={(e) => setContactPerson(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Owner or Manager name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+                  placeholder="ပိုင်ရှင် သို့မဟုတ် မန်နေဂျာ အမည်"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Store Phone *
+                  ဆိုင်ဖုန်း *
                 </label>
                 <input
                   type="tel"
                   value={storePhone}
                   onChange={(e) => setStorePhone(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
                   placeholder="09xxxxxxxxx"
                   required
                 />
@@ -204,27 +204,27 @@ export default function StoreSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Category *
+                  လုပ်ငန်းအမျိုးအစား *
                 </label>
                 <input
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Clothing, Food, etc."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+                  placeholder":"အဝတ်အထည်၊ အစားအသောက် စသည်"
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo URL (optional)
+                  လိုဂို URL (ရွေးချယ်နိုင်သည်)
                 </label>
                 <input
                   type="url"
                   value={logoUrl}
                   onChange={(e) => setLogoUrl(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
                   placeholder="https://example.com/logo.png"
                 />
               </div>
@@ -232,13 +232,13 @@ export default function StoreSettings() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Store Address *
+                ဆိုင်လိပ်စာ *
               </label>
               <textarea
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Full store or business address"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+                placeholder="ဆိုင် သို့မဟုတ် လုပ်ငန်းလိပ်စာ အပြည့်အစုံ"
                 rows={3}
                 required
               />
@@ -246,13 +246,13 @@ export default function StoreSettings() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Store Description *
+                ဆိုင်ဖော်ပြချက် *
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="What do you sell? Describe in detail."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+                placeholder="ဘာရောင်းသနည်း? အသေးစိတ် ဖော်ပြပါ။"
                 rows={4}
                 required
               />
@@ -262,17 +262,17 @@ export default function StoreSettings() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full bg-[#1a7f8c] text-white py-3 rounded-lg font-semibold hover:bg-[#156a75] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Save className="w-5 h-5" />
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                {isLoading ? 'သိမ်းဆည်းနေသည်...' : 'သိမ်းဆည်းမည်'}
               </button>
             </div>
           </form>
 
           <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-3">Low-stock Alerts (per product)</h3>
-            <p className="text-sm text-gray-500 mb-4">Set the threshold at which you'll receive a low-stock notification for each product.</p>
+            <h3 className="text-lg font-semibold mb-3">စတော့နည်းနေသည့် အကြောင်းကြားချက်များ (ပစ္စည်းတစ်ခုချင်းစီ)</h3>
+            <p className="text-sm text-gray-500 mb-4">ပစ္စည်းတစ်ခုချင်းစီအတွက် စတော့နည်းနေသည့်အခါ အကြောင်းကြားချက်ရရှိရန် ကန့်သတ်ချက် သတ်မှတ်ပါ။</p>
 
             <div className="space-y-3">
               {products.map((p) => (
@@ -300,9 +300,9 @@ export default function StoreSettings() {
                           console.error('Failed to update threshold', err);
                         }
                       }}
-                      className="bg-purple-600 text-white px-3 py-2 rounded-lg text-sm"
+                      className="bg-[#1a7f8c] text-white px-3 py-2 rounded-lg text-sm"
                     >
-                      Save
+                      သိမ်းဆည်းမည်
                     </button>
                   </div>
                 </div>
@@ -312,7 +312,7 @@ export default function StoreSettings() {
 
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Approval Status:</span>
+              <span className="text-gray-600">အတည်ပြုမှု အခြေအနေ:</span>
               <span className={`font-semibold ${
                 store.approval_status === 'approved' ? 'text-green-600' :
                 store.approval_status === 'rejected' ? 'text-red-600' :
@@ -323,7 +323,7 @@ export default function StoreSettings() {
             </div>
             {store.rejection_reason && (
               <div className="mt-2 text-sm text-red-600">
-                <span className="font-semibold">Rejection Reason:</span> {store.rejection_reason}
+                <span className="font-semibold">ပယ်ချရမည့် အကြောင်းပြချက်:</span> {store.rejection_reason}
               </div>
             )}
           </div>

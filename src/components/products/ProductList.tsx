@@ -85,7 +85,7 @@ export default function ProductList() {
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a7f8c]"></div>
       </div>
     );
   }
@@ -94,15 +94,15 @@ export default function ProductList() {
     <div className="p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">Create products and share order links with buyers.</p>
+          <h1 className="text-3xl font-bold text-gray-900">ပစ္စည်းများ</h1>
+          <p className="text-gray-600 mt-1">ပစ္စည်းများဖန်တီးပြီး ဝယ်ယူသူများနှင့် အော်ဒါလင့်ခ်များ မျှဝေပါ။</p>
         </div>
         <a
           href="/products/add"
-          className="flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+          className="flex items-center justify-center gap-2 bg-[#1a7f8c] text-white px-6 py-3 rounded-lg hover:bg-[#156a75] transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Add New Product
+          ပစ္စည်းအသစ် ထည့်မည်
         </a>
       </div>
 
@@ -113,18 +113,18 @@ export default function ProductList() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            placeholder="Search products..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+            placeholder="ပစ္စည်းများ ရှာဖွေရန်..."
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value as ProductStatusFilter)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
         >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">အခြေအနေအားလုံး</option>
+          <option value="active">အသုံးပြုနေသည်</option>
+          <option value="inactive">ရပ်နားထားသည်</option>
         </select>
       </div>
 
@@ -145,7 +145,7 @@ export default function ProductList() {
                     product.is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
                   }`}
                 >
-                  {product.is_active ? 'Active' : 'Inactive'}
+                  {product.is_active ? 'အသုံးပြုနေသည်' : 'ရပ်နားထားသည်'}
                 </span>
               </div>
             </div>
@@ -153,21 +153,21 @@ export default function ProductList() {
             <div className="p-4">
               <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
               <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                {product.description || 'No description'}
+                {product.description || 'ဖော်ပြချက်မရှိပါ'}
               </p>
 
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                <p className="text-xs font-medium text-gray-500 mb-1">Share Link</p>
+                <p className="text-xs font-medium text-gray-500 mb-1">မျှဝေလင့်ခ်</p>
                 <p className="text-sm text-gray-700 break-all">{getShareLink(product.slug)}</p>
               </div>
 
               <div className="flex gap-2 mb-4">
                 <button
                   onClick={() => copyLink(product.slug)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#1a7f8c]/10 text-[#1a7f8c] rounded-lg hover:bg-[#1a7f8c]/20 transition-colors text-sm"
                 >
                   <LinkIcon className="w-4 h-4" />
-                  Copy
+                  ကူးယူမည်
                 </button>
                 <a
                   href={getShareLink(product.slug)}
@@ -183,16 +183,16 @@ export default function ProductList() {
               <div className="flex gap-2">
                 <button
                   onClick={() => window.location.href = `/products/edit/${product.id}`}
-                  className="flex-1 px-3 py-2 border border-purple-300 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors text-sm flex items-center justify-center gap-1"
+                  className="flex-1 px-3 py-2 border border-[#1a7f8c]/30 text-[#1a7f8c] rounded-lg hover:bg-[#1a7f8c]/10 transition-colors text-sm flex items-center justify-center gap-1"
                 >
                   <Edit className="w-4 h-4" />
-                  Edit
+                  ပြင်ဆင်မည်
                 </button>
                 <button
                   onClick={() => toggleStatus(product)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
-                  {product.is_active ? 'Deactivate' : 'Activate'}
+                  {product.is_active ? 'ရပ်နားမည်' : 'အသုံးပြုမည်'}
                 </button>
                 <button
                   onClick={() => handleDeleteProduct(product.id)}
@@ -210,12 +210,12 @@ export default function ProductList() {
       {filteredProducts.length === 0 && (
         <div className="text-center py-12">
           <Package className="w-14 h-14 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">No products found</p>
+          <p className="text-gray-500 text-lg">ပစ္စည်းမတွေ့ပါ</p>
           <a
             href="/products/add"
-            className="inline-block mt-4 text-purple-600 hover:text-purple-700 font-semibold"
+            className="inline-block mt-4 text-[#1a7f8c] hover:text-[#156a75] font-semibold"
           >
-            Add your first product
+            ပထမပစ္စည်း ထည့်မည်
           </a>
         </div>
       )}

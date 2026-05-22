@@ -111,7 +111,7 @@ export default function OrderList() {
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a7f8c]"></div>
       </div>
     );
   }
@@ -120,16 +120,16 @@ export default function OrderList() {
     <div className="p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-600 mt-1">Orders placed from your shared product links.</p>
+          <h1 className="text-3xl font-bold text-gray-900">အော်ဒါများ</h1>
+          <p className="text-gray-600 mt-1">သင့်မျှဝေထားသော ပစ္စည်းလင့်ခ်များမှ အော်ဒါများ</p>
         </div>
         <button
           onClick={exportOrders}
           disabled={filteredOrders.length === 0}
-          className="flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+          className="flex items-center justify-center gap-2 bg-[#1a7f8c] text-white px-6 py-3 rounded-lg hover:bg-[#156a75] transition-colors disabled:opacity-50"
         >
           <Download className="w-5 h-5" />
-          Export CSV
+          CSV တင်ပို့မည်
         </button>
       </div>
 
@@ -140,30 +140,30 @@ export default function OrderList() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            placeholder="Search by name, order ID, or phone..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+            placeholder="အမည်၊ အော်ဒါ ID သို့မဟုတ် ဖုန်းနံပါတ်ဖြင့် ရှာဖွေရန်..."
           />
         </div>
         <select
           value={filterPayment}
           onChange={(e) => setFilterPayment(e.target.value as PaymentFilter)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
         >
-          <option value="all">All Payment Status</option>
-          <option value="pending">Pending</option>
-          <option value="paid">Paid</option>
-          <option value="failed">Failed</option>
+          <option value="all">ငွေပေးချေမှု အခြေအနေအားလုံး</option>
+          <option value="pending">စောင့်ဆိုင်းဆဲ</option>
+          <option value="paid">ပေးပြီးပြီ</option>
+          <option value="failed">မအောင်မြင်ပါ</option>
         </select>
         <select
           value={filterDelivery}
           onChange={(e) => setFilterDelivery(e.target.value as DeliveryFilter)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
         >
-          <option value="all">All Delivery Status</option>
-          <option value="pending">Pending</option>
-          <option value="preparing">Preparing</option>
-          <option value="shipped">Shipped</option>
-          <option value="delivered">Delivered</option>
+          <option value="all">ပို့ဆောင်မှု အခြေအနေအားလုံး</option>
+          <option value="pending">စောင့်ဆိုင်းဆဲ</option>
+          <option value="preparing">ပြင်ဆင်နေသည်</option>
+          <option value="shipped">ပို့ပြီးပြီ</option>
+          <option value="delivered">ပေးပြီးပြီ</option>
         </select>
       </div>
 
@@ -181,13 +181,13 @@ export default function OrderList() {
                     }}
                   />
                 </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Order ID</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Customer</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Total</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Payment</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Delivery</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">အော်ဒါ ID</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">ဝယ်ယူသူ</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">ဖုန်း</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">စုစုပေါင်း</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">ငွေပေးချေမှု</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">ပို့ဆောင်မှု</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-700">လုပ်ဆောင်ချက်များ</th>
               </tr>
             </thead>
             <tbody>
@@ -207,13 +207,13 @@ export default function OrderList() {
                     />
                   </td>
                   <td className="px-4 py-3 font-medium">
-                    <a href={`/orders/${order.id}`} className="text-purple-600 hover:text-purple-700">
+                    <a href={`/orders/${order.id}`} className="text-[#1a7f8c] hover:text-[#156a75]">
                       {order.id}
                     </a>
                   </td>
                   <td className="px-4 py-3">{order.customer_name}</td>
                   <td className="px-4 py-3">{order.customer_phone}</td>
-                  <td className="px-4 py-3 font-semibold">{order.total_price.toLocaleString()} Ks</td>
+                  <td className="px-4 py-3 font-semibold">{order.total_price.toLocaleString()} ကျပ်</td>
                   <td className="px-4 py-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.payment_status)}`}>
                       {order.payment_status}
@@ -263,7 +263,7 @@ export default function OrderList() {
 
         {filteredOrders.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No orders found</p>
+            <p className="text-gray-500 text-lg">အော်ဒါမတွေ့ပါ</p>
           </div>
         )}
       </div>

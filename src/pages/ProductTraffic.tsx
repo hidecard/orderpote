@@ -25,21 +25,21 @@ export default function ProductTrafficPage() {
   return (
     <div className="p-6">
       <div className="bg-white rounded-xl shadow-md p-6">
-        <h1 className="text-2xl font-semibold mb-4">Product Traffic</h1>
+        <h1 className="text-2xl font-semibold mb-4">ပစ္စည်းလာရောက်မှု</h1>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ပစ္စည်း</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">လှုပ်ရှားမှု</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ပြောင်းလဲနှုန်း</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {rows.map((p) => (
                 <tr key={p.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    <a className="text-blue-600 hover:underline" href={`/product/${p.slug || p.id}`}>{p.name}</a>
+                    <a className="text-[#1a7f8c] hover:underline" href={`/product/${p.slug || p.id}`}>{p.name}</a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center space-x-3">
