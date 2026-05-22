@@ -30,26 +30,26 @@ export default function Sidebar() {
 
   const menuItems = isAdmin
     ? [
-        { icon: Bell, label: 'Notifications', path: '/notifications' },
-        { icon: ShieldCheck, label: 'Store Approvals', path: '/admin/store-approvals' },
-        { icon: Package, label: 'Seller Management', path: '/admin/sellers' },
-        { icon: CreditCard, label: 'Plan Management', path: '/admin/plans' },
+        { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
+        { icon: ShieldCheck, label: 'ဆိုင်ခွင့်အတည်ပြုမှုများ', path: '/admin/store-approvals' },
+        { icon: Package, label: 'ရောင်းချသူများစီမံခန့်ခွဲမှု', path: '/admin/sellers' },
+        { icon: CreditCard, label: 'အစီအစဉ်များစီမံခန့်ခွဲမှု', path: '/admin/plans' },
       ]
     : [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: Package, label: 'Products', path: '/products' },
-        { icon: Tag, label: 'Discounts', path: '/discounts' },
-        { icon: BarChart, label: 'Product Traffic', path: '/product-traffic' },
-        { icon: ShoppingCart, label: 'Orders', path: '/orders' },
-        { icon: Bell, label: 'Notifications', path: '/notifications' },
-        { icon: StoreIcon, label: 'Store Settings', path: '/store-settings' },
-        { icon: Wallet, label: 'Payment Wallet', path: '/wallet-setup' },
+        { icon: LayoutDashboard, label: 'ဒက်ရှ်ဘုတ်', path: '/dashboard' },
+        { icon: Package, label: 'ပစ္စည်းများ', path: '/products' },
+        { icon: Tag, label: 'လျှော့ဈေးများ', path: '/discounts' },
+        { icon: BarChart, label: 'ပစ္စည်းလာရောက်မှု', path: '/product-traffic' },
+        { icon: ShoppingCart, label: 'အော်ဒါများ', path: '/orders' },
+        { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
+        { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings' },
+        { icon: Wallet, label: 'ငွေပေးချေမှုအိတ်', path: '/wallet-setup' },
       ];
 
   return (
     <aside className="relative flex w-full max-w-xs min-h-0 flex-col border-r border-gray-200 bg-white p-4 md:h-screen md:w-64 md:sticky md:top-0 md:self-start">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-purple-600">OrderPote</h1>
+        <h1 className="text-2xl font-bold text-[#1a7f8c]">OrderPote</h1>
       </div>
       
       <nav className="flex-1 overflow-y-auto pr-1 space-y-2">
@@ -61,8 +61,8 @@ export default function Sidebar() {
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-purple-100 text-purple-600 font-bold' 
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+                  ? 'bg-[#1a7f8c]/10 text-[#1a7f8c] font-bold' 
+                  : 'text-gray-700 hover:bg-[#1a7f8c]/5 hover:text-[#1a7f8c]'
               }`}
             >
               <item.icon className="w-5 h-5" />
@@ -83,7 +83,7 @@ export default function Sidebar() {
           className="flex w-full items-center justify-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-red-600 transition-colors hover:bg-red-100"
         >
           <LogOut className="w-5 h-5" />
-          <span>Logout</span>
+          <span>အကောင့်ထွက်မည်</span>
         </button>
 
         {user && (
