@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, ShoppingCart, Share2 } from 'lucide-react';
+import SeoMeta from '../common/SeoMeta';
 import type { Product, ProductVariant, Review, Store } from '../../lib/schema';
 import { getProductBySlug, getProductImages, getProductVariants, getProductReviews, trackPageView, getStoreByUserId } from '../../lib/db';
 
 interface ProductLandingPageProps {
   slug: string;
+}
+
+function getProductDescription(product: Product) {
+  return product.description || `Order ${product.name} on OrderPote.`;
 }
 
 export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
@@ -56,27 +61,6 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     fetchProductData();
   }, [slug]);
 
-  useEffect(() => {
-    if (!product) return;
-
-    document.title = `${product.name} | OrderPote`;
-
-    const setMeta = (property: string, content: string) => {
-      let element = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute('property', property);
-        document.head.appendChild(element);
-      }
-      element.content = content;
-    };
-
-    setMeta('og:title', product.name);
-    setMeta('og:description', product.description || 'Order this product on OrderPote');
-    setMeta('og:url', window.location.href);
-    if (product.cover_image_url) setMeta('og:image', product.cover_image_url);
-  }, [product]);
-
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -113,31 +97,53 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-      </div>
+      <>
+        <SeoMeta
+          title="Loading Product | OrderPote"
+          description="Loading this OrderPote product page."
+        />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+      </>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
-          <p className="text-gray-600">This product may have been removed or is no longer available.</p>
+      <>
+        <SeoMeta
+          title="Product Not Found | OrderPote"
+          description="This OrderPote product may have been removed or is no longer available."
+          noIndex
+        />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
+            <p className="text-gray-600">This product may have been removed or is no longer available.</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!product.is_active) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Temporarily Closed</h1>
-          <p className="text-gray-600">This item is temporarily unavailable. Please check back later.</p>
+      <>
+        <SeoMeta
+          title={`${product.name} | OrderPote`}
+          description="This OrderPote product is temporarily unavailable."
+          image={product.cover_image_url || images[0] || '/logo.png'}
+          type="product"
+          noIndex
+        />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Temporarily Closed</h1>
+            <p className="text-gray-600">This item is temporarily unavailable. Please check back later.</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -145,6 +151,12 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
 
   return (
     <div className="min-h-screen bg-[#f8fbfc]">
+      <SeoMeta
+        title={`${product.name} | OrderPote`}
+        description={getProductDescription(product)}
+        image={product.cover_image_url || images[0] || '/logo.png'}
+        type="product"
+      />
       <div className="max-w-4xl mx-auto p-4">
         <div className="mb-6 rounded-[1.5rem] overflow-hidden bg-white shadow-2xl border border-gray-100">
           <div className="bg-[#1a7f8c] px-6 py-6 text-white">
