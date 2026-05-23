@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, Clock, Package, Truck, Download, ExternalLink, RefreshCw } from 'lucide-react';
-import type { Order, Product, ProductVariant } from '../../lib/schema';
-import { getOrderById, getProductById, getProductVariantById } from '../../lib/db';
+import type { Order, Product, ProductVariant, Store } from '../../lib/schema';
+import { getOrderById, getProductById, getProductVariantById, getStoreById } from '../../lib/db';
+import ReceiptTemplate from '../common/ReceiptTemplate';
 
 interface OrderTrackingProps {
   orderId: string;
@@ -11,6 +12,7 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
   const [order, setOrder] = useState<Order | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
+  const [store, setStore] = useState<Store | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +28,12 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
           ]);
           setProduct(productData);
           setVariant(variantData);
+
+          // Fetch store data
+          if (productData) {
+            const storeData = await getStoreById(productData.store_id);
+            setStore(storeData);
+          }
         }
       } catch (error) {
         console.error('Error fetching order:', error);
@@ -59,54 +67,9 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
   const generatePDF = () => {
     if (!order) return;
 
-    const lines = [
-      'OrderPote Receipt',
-      `Order ID: ${order.id}`,
-      `Date: ${new Date(order.created_at).toLocaleString()}`,
-      '',
-      `Product: ${product?.name || order.product_id}`,
-      `Variant: ${variant?.name || order.variant_id || '-'}`,
-      `Quantity: ${order.quantity}`,
-      `Total: ${order.total_price.toLocaleString()} Ks`,
-      '',
-      `Customer: ${order.customer_name}`,
-      `Phone: ${order.customer_phone}`,
-      `Address: ${order.customer_address}, ${order.customer_region}, ${order.customer_township}`,
-      '',
-      `Payment Status: ${order.payment_status}`,
-      `Delivery Status: ${order.delivery_status}`,
-      `Delivery Service: ${order.delivery_service || '-'}`,
-      `Tracking ID: ${order.tracking_id || '-'}`,
-    ];
-
-    const escapePdfText = (value: string) => value.replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)');
-    const stream = ['BT', '/F1 14 Tf', '50 790 Td', '18 TL', ...lines.map((line) => `(${escapePdfText(line)}) Tj T*`), 'ET'].join('\n');
-    const objects = [
-      '<< /Type /Catalog /Pages 2 0 R >>',
-      '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-      '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
-      '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-      `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-    ];
-    let pdf = '%PDF-1.4\n';
-    const offsets = [0];
-    objects.forEach((object, index) => {
-      offsets.push(pdf.length);
-      pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-    });
-    const xrefOffset = pdf.length;
-    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-    offsets.slice(1).forEach((offset) => {
-      pdf += `${offset.toString().padStart(10, '0')} 00000 n \n`;
-    });
-    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-
-    const blob = new Blob([pdf], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${order.id}-receipt.pdf`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    // Use window.print() for reliable PDF generation with Myanmar font support
+    // This preserves all fonts and styling, and works better than html2canvas
+    window.print();
   };
 
   if (isLoading) {
@@ -139,8 +102,32 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <>
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #receipt-container, #receipt-container * {
+            visibility: visible;
+          }
+          #receipt-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+          }
+          @page {
+            margin: 0;
+          }
+        }
+      `}</style>
+      <div className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-md p-6 mb-4">
           <div className="flex justify-between items-start mb-4">
@@ -163,6 +150,14 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
               day: 'numeric',
             })}
           </p>
+        </div>
+
+        {/* Receipt Preview */}
+        <div className="bg-white rounded-xl shadow-md p-6 mb-4">
+          <h2 className="text-xl font-semibold mb-4">Receipt Preview</h2>
+          <div className="border rounded-lg" id="receipt-container">
+            <ReceiptTemplate order={order} product={product} variant={variant} store={store} />
+          </div>
         </div>
 
         {/* Status Timeline */}
@@ -316,5 +311,6 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }

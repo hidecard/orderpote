@@ -1249,6 +1249,16 @@ export async function getStoreByUserId(userId: string): Promise<Store | null> {
   return rowAs<Store>(result.rows[0]);
 }
 
+// Get store by ID
+export async function getStoreById(storeId: string): Promise<Store | null> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM stores WHERE id = ?',
+    args: [storeId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<Store>(result.rows[0]);
+}
+
 // Update store approval status
 export async function updateStoreApprovalStatus(storeId: string, status: 'pending' | 'approved' | 'rejected', rejectionReason?: string): Promise<void> {
   await turso.execute({
