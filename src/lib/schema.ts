@@ -338,6 +338,9 @@ export interface ProductVariant {
   id: string;
   product_id: string;
   name: string;
+  size?: string;
+  color?: string;
+  color_hex?: string;
   price: number;
   stock: number;
   created_at: string;

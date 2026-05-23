@@ -12,6 +12,52 @@ function getProductDescription(product: Product) {
   return product.description || `${product.name} ကို OrderPote တွင် မှာယူပါ။`;
 }
 
+function parseVariantName(name: string): { size?: string; color?: string } {
+  // Try to parse "Size - Color" format
+  const parts = name.split(' - ');
+  if (parts.length === 2) {
+    const size = parts[0].trim();
+    const color = parts[1].trim();
+    // Check if first part looks like a size (common size patterns)
+    const sizePatterns = /^(XS|S|M|L|XL|XXL|\d+XL?|\d+)$/i;
+    if (sizePatterns.test(size)) {
+      return { size, color };
+    }
+  }
+  return {};
+}
+
+function getVariantSize(variant: ProductVariant): string | undefined {
+  return variant.size || parseVariantName(variant.name).size;
+}
+
+function getVariantColor(variant: ProductVariant): string | undefined {
+  return variant.color || parseVariantName(variant.name).color;
+}
+
+function getVariantColorHex(variant: ProductVariant): string {
+  if (variant.color_hex) return variant.color_hex;
+  
+  // Map common color names to hex codes
+  const colorMap: Record<string, string> = {
+    'Black': '#000000',
+    'White': '#FFFFFF',
+    'Red': '#EF4444',
+    'Blue': '#3B82F6',
+    'Green': '#10B981',
+    'Yellow': '#F59E0B',
+    'Purple': '#8B5CF6',
+    'Pink': '#EC4899',
+    'Orange': '#F97316',
+    'Brown': '#78350F',
+    'Gray': '#6B7280',
+    'Grey': '#6B7280',
+  };
+  
+  const color = getVariantColor(variant);
+  return color ? (colorMap[color] || '#000000') : '#000000';
+}
+
 export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -259,30 +305,120 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
 
           {/* Variants */}
           {variants.length > 0 && (
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2">Select Variant</h3>
-              <div className="space-y-2">
-                {variants.map((variant) => (
-                  <button
-                    key={variant.id}
-                    onClick={() => setSelectedVariant(variant)}
-                    disabled={variant.stock === 0}
-                    className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
-                      selectedVariant?.id === variant.id
-                        ? 'border-[#1a7f8c] bg-[#eaf8fb]'
-                          : 'border-gray-200 hover:border-gray-300'
-                    } ${variant.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{variant.name}</span>
-                      <span className="text-sm text-gray-600">
-                        {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
-                      </span>
-                    </div>
-                    <div className="text-[#1a7f8c] font-semibold">{variant.price.toLocaleString()} Ks</div>
-                  </button>
-                ))}
-              </div>
+            <div className="mb-4 space-y-4">
+              {/* Size Selection */}
+              {variants.some(v => getVariantSize(v)) && (
+                <div>
+                  <h3 className="font-semibold mb-2">အရွယ်အစား (Size)</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(new Set(variants.filter(v => getVariantSize(v)).map(v => getVariantSize(v)))).map((size) => {
+                      const sizeVariants = variants.filter(v => getVariantSize(v) === size);
+                      const hasStock = sizeVariants.some(v => v.stock > 0);
+                      const isSelected = selectedVariant && getVariantSize(selectedVariant) === size;
+                      return (
+                        <button
+                          key={size}
+                          onClick={() => {
+                            const availableVariant = sizeVariants.find(v => v.stock > 0);
+                            if (availableVariant) setSelectedVariant(availableVariant);
+                          }}
+                          disabled={!hasStock}
+                          className={`px-4 py-2 rounded-lg border-2 font-medium transition-colors ${
+                            isSelected
+                              ? 'border-[#1a7f8c] bg-[#1a7f8c] text-white'
+                              : 'border-gray-300 hover:border-[#1a7f8c] text-gray-700'
+                          } ${!hasStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Color Selection */}
+              {variants.some(v => getVariantColor(v)) && (
+                <div>
+                  <h3 className="font-semibold mb-2">အရောင် (Color)</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {Array.from(new Set(variants.filter(v => getVariantColor(v)).map(v => getVariantColor(v)))).map((color) => {
+                      const colorVariants = variants.filter(v => getVariantColor(v) === color);
+                      const hasStock = colorVariants.some(v => v.stock > 0);
+                      const isSelected = selectedVariant && getVariantColor(selectedVariant) === color;
+                      const colorHex = getVariantColorHex(colorVariants[0]);
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => {
+                            const availableVariant = colorVariants.find(v => v.stock > 0);
+                            if (availableVariant) setSelectedVariant(availableVariant);
+                          }}
+                          disabled={!hasStock}
+                          className={`relative w-10 h-10 rounded-full border-2 transition-all ${
+                            isSelected
+                              ? 'border-[#1a7f8c] ring-2 ring-[#1a7f8c] ring-offset-2'
+                              : 'border-gray-300 hover:border-[#1a7f8c]'
+                          } ${!hasStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          style={{ backgroundColor: colorHex }}
+                          title={color}
+                        >
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-3 h-3 bg-white rounded-full" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Price Display */}
+              {selectedVariant && (
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="text-sm text-gray-600">ရွေးချယ်ထားသော:</span>
+                    <span className="font-medium ml-2">
+                      {getVariantSize(selectedVariant) && `${getVariantSize(selectedVariant)} `}
+                      {getVariantColor(selectedVariant) && `${getVariantColor(selectedVariant)}`}
+                    </span>
+                  </div>
+                  <div className="text-[#1a7f8c] font-bold text-xl">
+                    {selectedVariant.price.toLocaleString()} Ks
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback for variants without size/color */}
+              {!variants.some(v => getVariantSize(v)) && !variants.some(v => getVariantColor(v)) && (
+                <div>
+                  <h3 className="font-semibold mb-2">ရွေးချယ်ပါ</h3>
+                  <div className="space-y-2">
+                    {variants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        onClick={() => setSelectedVariant(variant)}
+                        disabled={variant.stock === 0}
+                        className={`w-full p-3 rounded-lg border-2 text-left transition-colors ${
+                          selectedVariant?.id === variant.id
+                            ? 'border-[#1a7f8c] bg-[#eaf8fb]'
+                              : 'border-gray-200 hover:border-gray-300'
+                        } ${variant.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{variant.name}</span>
+                          <span className="text-sm text-gray-600">
+                            {variant.stock > 0 ? `${variant.stock} in stock` : 'Out of stock'}
+                          </span>
+                        </div>
+                        <div className="text-[#1a7f8c] font-semibold">{variant.price.toLocaleString()} Ks</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -14,6 +14,9 @@ export default function AddProductForm() {
   const [variants, setVariants] = useState<Partial<ProductVariant>[]>([]);
   const [currentVariant, setCurrentVariant] = useState({
     name: '',
+    size: '',
+    color: '',
+    color_hex: '',
     price: '',
     stock: '',
   });
@@ -73,18 +76,23 @@ export default function AddProductForm() {
   };
 
   const addVariant = () => {
-    if (currentVariant.name && currentVariant.price && currentVariant.stock) {
+    if (currentVariant.price && currentVariant.stock) {
       setVariants([
         ...variants,
         {
           ...currentVariant,
           id: generateId(),
+          name: currentVariant.size && currentVariant.color 
+            ? `${currentVariant.size} - ${currentVariant.color}`
+            : currentVariant.size || currentVariant.color || currentVariant.name,
           price: parseInt(currentVariant.price),
           stock: parseInt(currentVariant.stock),
           created_at: new Date().toISOString(),
         },
       ]);
-      setCurrentVariant({ name: '', price: '', stock: '' });
+      setCurrentVariant({ name: '', size: '', color: '', color_hex: '', price: '', stock: '' });
+    } else {
+      alert('စျေးနှုန်းနှင့် လက်ကျန်ကို ဖြည့်သွင်းပါ (Please fill in price and stock)');
     }
   };
 
@@ -157,6 +165,9 @@ export default function AddProductForm() {
         await createProductVariant({
           product_id: product.id,
           name: variant.name || '',
+          size: variant.size,
+          color: variant.color,
+          color_hex: variant.color_hex,
           price: variant.price || 0,
           stock: variant.stock || 0,
         });
@@ -313,74 +324,155 @@ export default function AddProductForm() {
 
         {/* Variants */}
         <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Product Variants</h2>
+          <h2 className="text-xl font-semibold mb-4">ပစ္စည်းအမျိုးအစားများ (Product Variants)</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="space-y-4 mb-4">
+            {/* Size Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Variant Name
+                အရွယ်အစား (Size)
               </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setCurrentVariant({ ...currentVariant, size })}
+                    className={`px-4 py-2 rounded-lg border-2 font-medium transition-colors ${
+                      currentVariant.size === size
+                        ? 'border-[#1a7f8c] bg-[#1a7f8c] text-white'
+                        : 'border-gray-300 hover:border-[#1a7f8c] text-gray-700'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
               <input
                 type="text"
-                value={currentVariant.name}
-                onChange={(e) =>
-                  setCurrentVariant({ ...currentVariant, name: e.target.value })
-                }
+                value={currentVariant.size}
+                onChange={(e) => setCurrentVariant({ ...currentVariant, size: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="e.g., Size: M, Color: Black"
+                placeholder="သို့မဟုတ် ကိုယ်တိုင်ရေးသားပါ"
               />
             </div>
+
+            {/* Color Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price (Kyats)
+                အရောင် (Color)
               </label>
-              <input
-                type="number"
-                value={currentVariant.price}
-                onChange={(e) =>
-                  setCurrentVariant({ ...currentVariant, price: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="0"
-              />
+              <div className="flex flex-wrap gap-3 mb-2">
+                {[
+                  { name: 'Black', hex: '#000000' },
+                  { name: 'White', hex: '#FFFFFF' },
+                  { name: 'Red', hex: '#EF4444' },
+                  { name: 'Blue', hex: '#3B82F6' },
+                  { name: 'Green', hex: '#10B981' },
+                  { name: 'Yellow', hex: '#F59E0B' },
+                  { name: 'Purple', hex: '#8B5CF6' },
+                  { name: 'Pink', hex: '#EC4899' },
+                ].map((color) => (
+                  <button
+                    key={color.name}
+                    type="button"
+                    onClick={() => setCurrentVariant({ ...currentVariant, color: color.name, color_hex: color.hex })}
+                    className={`relative w-10 h-10 rounded-full border-2 transition-all ${
+                      currentVariant.color === color.name
+                        ? 'border-[#1a7f8c] ring-2 ring-[#1a7f8c] ring-offset-2'
+                        : 'border-gray-300 hover:border-[#1a7f8c]'
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
+                  >
+                    {currentVariant.color === color.name && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3 h-3 bg-white rounded-full" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={currentVariant.color}
+                  onChange={(e) => setCurrentVariant({ ...currentVariant, color: e.target.value })}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="အရောင်အမည်"
+                />
+                <input
+                  type="color"
+                  value={currentVariant.color_hex || '#000000'}
+                  onChange={(e) => setCurrentVariant({ ...currentVariant, color_hex: e.target.value })}
+                  className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Stock
-              </label>
-              <input
-                type="number"
-                value={currentVariant.stock}
-                onChange={(e) =>
-                  setCurrentVariant({ ...currentVariant, stock: e.target.value })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="0"
-              />
+
+            {/* Price and Stock */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  စျေးနှုန်း (Price) *
+                </label>
+                <input
+                  type="number"
+                  value={currentVariant.price}
+                  onChange={(e) => setCurrentVariant({ ...currentVariant, price: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  လက်ကျန် (Stock) *
+                </label>
+                <input
+                  type="number"
+                  value={currentVariant.stock}
+                  onChange={(e) => setCurrentVariant({ ...currentVariant, stock: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="0"
+                />
+              </div>
             </div>
           </div>
 
           <button
             type="button"
             onClick={addVariant}
-            className="flex items-center gap-2 text-purple-600 hover:text-purple-700 font-semibold mb-4"
+            className="flex items-center gap-2 bg-[#1a7f8c] text-white px-4 py-2 rounded-lg hover:bg-[#156a75] transition-colors font-semibold mb-4"
           >
             <Plus className="w-5 h-5" />
-            Add Variant
+            အမျိုးအစားထည့်ရန် (Add Variant)
           </button>
 
           {variants.length > 0 && (
             <div className="space-y-2">
+              <h3 className="font-semibold text-gray-700">ထည့်ပြီးအမျိုးအစားများ:</h3>
               {variants.map((variant, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
                 >
-                  <div>
-                    <p className="font-semibold">{variant.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {variant.price} Kyats - Stock: {variant.stock}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    {variant.color_hex && (
+                      <div
+                        className="w-8 h-8 rounded-full border-2"
+                        style={{ backgroundColor: variant.color_hex }}
+                      />
+                    )}
+                    <div>
+                      <p className="font-semibold">{variant.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {variant.size && `Size: ${variant.size} `}
+                        {variant.color && `Color: ${variant.color}`}
+                      </p>
+                      <p className="text-sm text-[#1a7f8c] font-semibold">
+                        {variant.price?.toLocaleString()} Ks - Stock: {variant.stock}
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
