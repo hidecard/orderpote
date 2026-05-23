@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { User, Save, ArrowLeft, Mail, Phone, Shield, Lock, Eye, EyeOff } from 'lucide-react';
+import { Save, ArrowLeft, Mail, Phone, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { updateUser, changePassword } from '../../lib/db';
 

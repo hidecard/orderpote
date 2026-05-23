@@ -393,3 +393,39 @@ export interface Notification {
   related_id?: string;
   created_at: string;
 }
+
+export interface Staff {
+  id: string;
+  store_id: string;
+  user_id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'admin' | 'manager' | 'staff';
+  status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Device {
+  id: string;
+  store_id: string;
+  device_name: string;
+  device_type: 'mobile' | 'tablet' | 'desktop' | 'other';
+  device_identifier: string;
+  last_active: string;
+  status: 'active' | 'inactive' | 'blocked';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DeviceUsage {
+  id: string;
+  device_id: string;
+  user_id: string;
+  account_type: 'seller' | 'staff';
+  login_time: string;
+  logout_time?: string;
+  ip_address?: string;
+  user_agent?: string;
+}

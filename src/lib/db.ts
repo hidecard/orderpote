@@ -1,8 +1,12 @@
 import turso from './turso';
-import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog } from './schema';
+import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog, Staff, Device, DeviceUsage } from './schema';
 
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
+
+function generateId(): string {
+  return crypto.randomUUID();
+}
 
 let plansSchemaEnsured = false;
 let subscriptionsSchemaEnsured = false;
@@ -524,6 +528,211 @@ export async function changePassword(userId: string, currentPassword: string, ne
   });
 
   return true;
+}
+
+// Staff Management Functions
+export async function getStaffByStoreId(storeId: string): Promise<Staff[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM staff WHERE store_id = ? ORDER BY created_at DESC',
+    args: [storeId],
+  });
+  return result.rows.map(row => rowAs<Staff>(row));
+}
+
+export async function createStaff(staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>): Promise<{ staff: Staff; password: string }> {
+  const id = generateId();
+  const now = new Date().toISOString();
+  
+  // Try to create a user account for the staff member
+  const userId = generateId();
+  const tempPassword = Math.random().toString(36).slice(-8); // Generate temporary password
+  
+  try {
+    await turso.execute({
+      sql: 'INSERT INTO users (id, email, password, name, is_seller, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      args: [userId, staff.email, tempPassword, staff.name, true, now, now],
+    });
+  } catch (error: any) {
+    // If email already exists, get the existing user
+    if (error.message.includes('UNIQUE constraint failed: users.email')) {
+      const existingUser = await turso.execute({
+        sql: 'SELECT id, password FROM users WHERE email = ?',
+        args: [staff.email],
+      });
+      if (existingUser.rows.length > 0) {
+        // Use existing user ID and password
+        const existingUserData = rowAs<{ id: string; password: string }>(existingUser.rows[0]);
+        await turso.execute({
+          sql: 'INSERT INTO staff (id, store_id, user_id, name, email, phone, role, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          args: [id, staff.store_id, existingUserData.id, staff.name, staff.email, staff.phone, staff.role, staff.status, now, now],
+        });
+        return { 
+          staff: { ...staff, id, user_id: existingUserData.id, created_at: now, updated_at: now },
+          password: existingUserData.password
+        };
+      }
+    }
+    throw error;
+  }
+  
+  await turso.execute({
+    sql: 'INSERT INTO staff (id, store_id, user_id, name, email, phone, role, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, staff.store_id, userId, staff.name, staff.email, staff.phone, staff.role, staff.status, now, now],
+  });
+  
+  return { 
+    staff: { ...staff, id, user_id: userId, created_at: now, updated_at: now },
+    password: tempPassword
+  };
+}
+
+export async function updateStaff(staffId: string, updates: Partial<Omit<Staff, 'id' | 'store_id' | 'created_at' | 'updated_at'>>): Promise<void> {
+  const updateFields: string[] = [];
+  const args: (string | null)[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.email !== undefined) {
+    updateFields.push('email = ?');
+    args.push(updates.email);
+  }
+  if (updates.phone !== undefined) {
+    updateFields.push('phone = ?');
+    args.push(updates.phone);
+  }
+  if (updates.role !== undefined) {
+    updateFields.push('role = ?');
+    args.push(updates.role);
+  }
+  if (updates.status !== undefined) {
+    updateFields.push('status = ?');
+    args.push(updates.status);
+  }
+
+  if (updateFields.length === 0) return;
+
+  updateFields.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(staffId);
+
+  await turso.execute({
+    sql: `UPDATE staff SET ${updateFields.join(', ')} WHERE id = ?`,
+    args,
+  });
+}
+
+export async function deleteStaff(staffId: string): Promise<void> {
+  await turso.execute({
+    sql: 'DELETE FROM staff WHERE id = ?',
+    args: [staffId],
+  });
+}
+
+export async function getStaffByUserId(userId: string): Promise<Staff | null> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM staff WHERE user_id = ?',
+    args: [userId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<Staff>(result.rows[0]);
+}
+
+// Device Management Functions
+export async function getDevicesByStoreId(storeId: string): Promise<Device[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM devices WHERE store_id = ? ORDER BY last_active DESC',
+    args: [storeId],
+  });
+  return result.rows.map(row => rowAs<Device>(row));
+}
+
+export async function createDevice(device: Omit<Device, 'id' | 'created_at' | 'updated_at'>): Promise<Device> {
+  const id = generateId();
+  const now = new Date().toISOString();
+  await turso.execute({
+    sql: 'INSERT INTO devices (id, store_id, device_name, device_type, device_identifier, last_active, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, device.store_id, device.device_name, device.device_type, device.device_identifier, device.last_active, device.status, now, now],
+  });
+  return { ...device, id, created_at: now, updated_at: now };
+}
+
+export async function updateDevice(deviceId: string, updates: Partial<Omit<Device, 'id' | 'store_id' | 'created_at' | 'updated_at'>>): Promise<void> {
+  const updateFields: string[] = [];
+  const args: (string | null)[] = [];
+
+  if (updates.device_name !== undefined) {
+    updateFields.push('device_name = ?');
+    args.push(updates.device_name);
+  }
+  if (updates.device_type !== undefined) {
+    updateFields.push('device_type = ?');
+    args.push(updates.device_type);
+  }
+  if (updates.device_identifier !== undefined) {
+    updateFields.push('device_identifier = ?');
+    args.push(updates.device_identifier);
+  }
+  if (updates.last_active !== undefined) {
+    updateFields.push('last_active = ?');
+    args.push(updates.last_active);
+  }
+  if (updates.status !== undefined) {
+    updateFields.push('status = ?');
+    args.push(updates.status);
+  }
+
+  if (updateFields.length === 0) return;
+
+  updateFields.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(deviceId);
+
+  await turso.execute({
+    sql: `UPDATE devices SET ${updateFields.join(', ')} WHERE id = ?`,
+    args,
+  });
+}
+
+export async function deleteDevice(deviceId: string): Promise<void> {
+  await turso.execute({
+    sql: 'DELETE FROM devices WHERE id = ?',
+    args: [deviceId],
+  });
+}
+
+// Device Usage Tracking Functions
+export async function recordDeviceUsage(usage: Omit<DeviceUsage, 'id'>): Promise<DeviceUsage> {
+  const id = generateId();
+  await turso.execute({
+    sql: 'INSERT INTO device_usage (id, device_id, user_id, account_type, login_time, logout_time, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, usage.device_id, usage.user_id, usage.account_type, usage.login_time, usage.logout_time || null, usage.ip_address || null, usage.user_agent || null],
+  });
+  return { ...usage, id };
+}
+
+export async function getDeviceUsageByDeviceId(deviceId: string): Promise<DeviceUsage[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM device_usage WHERE device_id = ? ORDER BY login_time DESC',
+    args: [deviceId],
+  });
+  return result.rows.map(row => rowAs<DeviceUsage>(row));
+}
+
+export async function getDeviceUsageByUserId(userId: string): Promise<DeviceUsage[]> {
+  const result = await turso.execute({
+    sql: 'SELECT * FROM device_usage WHERE user_id = ? ORDER BY login_time DESC',
+    args: [userId],
+  });
+  return result.rows.map(row => rowAs<DeviceUsage>(row));
+}
+
+export async function updateDeviceUsageLogout(usageId: string, logoutTime: string): Promise<void> {
+  await turso.execute({
+    sql: 'UPDATE device_usage SET logout_time = ? WHERE id = ?',
+    args: [logoutTime, usageId],
+  });
 }
 
 // Dashboard queries

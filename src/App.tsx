@@ -28,10 +28,12 @@ import OrderTracking from './components/buyer/OrderTracking';
 import MyOrders from './components/buyer/MyOrders';
 import StoreSettings from './components/dashboard/StoreSettings';
 import ProfileSettings from './components/dashboard/ProfileSettings';
+import StaffManagement from './components/dashboard/StaffManagement';
+import DeviceManagement from './components/dashboard/DeviceManagement';
 import AdminProfileSettings from './components/admin/AdminProfileSettings';
 import SeoMeta from './components/common/SeoMeta';
 import type { SeoMetaProps } from './components/common/SeoMeta';
-import { getStoreByUserId } from './lib/db';
+import { getStoreByUserId, getStaffByUserId, getStoreById } from './lib/db';
 import { isAdminUser } from './lib/admin';
 import type { Store } from './lib/schema';
 import './index.css'
@@ -62,7 +64,16 @@ function SellerAccessGate({ children }: { children: ReactNode }) {
       }
 
       try {
-        const currentStore = await getStoreByUserId(user.id);
+        let currentStore = await getStoreByUserId(user.id);
+        
+        // If user doesn't have a store, check if they are staff
+        if (!currentStore) {
+          const staff = await getStaffByUserId(user.id);
+          if (staff) {
+            currentStore = await getStoreById(staff.store_id);
+          }
+        }
+        
         setStore(currentStore);
       } finally {
         setIsCheckingStore(false);
@@ -433,6 +444,36 @@ function App() {
               {
                 title: 'ပရိုဖိုင်ဆက်တင်များ | OrderPote',
                 description: 'သင့် OrderPote ပရိုဖိုင်အချက်အလက်များကို အပ်ဒိတ်လုပ်ပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/staff-management"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Staff Management">
+                  <StaffManagement />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'ဝန်ထမ်းစီမံခန့်ခွဲမှု | OrderPote',
+                description: 'သင့် OrderPote ဆိုင်၏ ဝန်ထမ်းများကို စီမံခန့်ခွဲပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/device-management"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Device Management">
+                  <DeviceManagement />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'ကိရိယာစီမံခန့်ခွဲမှု | OrderPote',
+                description: 'သင့် OrderPote ဆိုင်ကို ဝင်ရောက်သော ကိရိယာများကို စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}

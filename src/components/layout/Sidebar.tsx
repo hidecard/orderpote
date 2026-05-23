@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Users, Smartphone } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
 import { getUnreadNotificationCount } from '../../lib/db';
@@ -44,6 +44,8 @@ export default function Sidebar() {
         { icon: ShoppingCart, label: 'အော်ဒါများ', path: '/orders' },
         { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
         { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings' },
+        { icon: Users, label: 'ဝန်ထမ်းစီမံခန့်ခွဲမှု', path: '/staff-management' },
+        { icon: Smartphone, label: 'ကိရိယာစီမံခန့်ခွဲမှု', path: '/device-management' },
         { icon: User, label: 'ပရိုဖိုင်ဆက်တင်များ', path: '/profile-settings' },
         { icon: Wallet, label: 'ငွေပေးချေမှုအိတ်', path: '/wallet-setup' },
       ];
