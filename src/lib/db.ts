@@ -1043,7 +1043,7 @@ export async function updateProductVariantStock(variantId: string, newStock: num
 
 export async function updateProductVariant(
   variantId: string,
-  updates: Partial<Pick<ProductVariant, 'name' | 'price' | 'stock'>>
+  updates: Partial<Pick<ProductVariant, 'name' | 'size' | 'color' | 'color_hex' | 'price' | 'stock'>>
 ): Promise<void> {
   const variant = await getProductVariantById(variantId);
   if (!variant) return;
@@ -1054,6 +1054,18 @@ export async function updateProductVariant(
   if (updates.name !== undefined) {
     updateFields.push('name = ?');
     args.push(updates.name);
+  }
+  if (updates.size !== undefined) {
+    updateFields.push('size = ?');
+    args.push(updates.size);
+  }
+  if (updates.color !== undefined) {
+    updateFields.push('color = ?');
+    args.push(updates.color);
+  }
+  if (updates.color_hex !== undefined) {
+    updateFields.push('color_hex = ?');
+    args.push(updates.color_hex);
   }
   if (updates.price !== undefined) {
     updateFields.push('price = ?');

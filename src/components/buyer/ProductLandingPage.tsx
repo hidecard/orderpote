@@ -24,11 +24,36 @@ function parseVariantName(name: string): { size?: string; color?: string } {
       return { size, color };
     }
   }
+  
+  // Try to parse "Size Color" format (space separated)
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 2) {
+    const firstWord = words[0];
+    const sizePatterns = /^(XS|S|M|L|XL|XXL|\d+XL?|\d+)$/i;
+    if (sizePatterns.test(firstWord)) {
+      return { size: firstWord, color: words.slice(1).join(' ') };
+    }
+  }
+  
+  // Try to extract size from anywhere in the name
+  const sizeMatch = name.match(/\b(XS|S|M|L|XL|XXL|\d+XL?|\d+)\b/i);
+  if (sizeMatch) {
+    const size = sizeMatch[1];
+    const color = name.replace(sizeMatch[0], '').replace(/[-–]/g, '').trim();
+    if (color) {
+      return { size, color };
+    }
+  }
+  
   return {};
 }
 
 function getVariantSize(variant: ProductVariant): string | undefined {
-  return variant.size || parseVariantName(variant.name).size;
+  if (variant.size) return variant.size;
+  const parsed = parseVariantName(variant.name);
+  if (parsed.size) return parsed.size;
+  // Fallback: use the variant name as size if no pattern matches
+  return variant.name;
 }
 
 function getVariantColor(variant: ProductVariant): string | undefined {
@@ -38,24 +63,47 @@ function getVariantColor(variant: ProductVariant): string | undefined {
 function getVariantColorHex(variant: ProductVariant): string {
   if (variant.color_hex) return variant.color_hex;
   
-  // Map common color names to hex codes
+  // Map common color names to hex codes (case-insensitive)
   const colorMap: Record<string, string> = {
-    'Black': '#000000',
-    'White': '#FFFFFF',
-    'Red': '#EF4444',
-    'Blue': '#3B82F6',
-    'Green': '#10B981',
-    'Yellow': '#F59E0B',
-    'Purple': '#8B5CF6',
-    'Pink': '#EC4899',
-    'Orange': '#F97316',
-    'Brown': '#78350F',
-    'Gray': '#6B7280',
-    'Grey': '#6B7280',
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'red': '#EF4444',
+    'blue': '#3B82F6',
+    'green': '#10B981',
+    'yellow': '#F59E0B',
+    'purple': '#8B5CF6',
+    'pink': '#EC4899',
+    'orange': '#F97316',
+    'brown': '#78350F',
+    'gray': '#6B7280',
+    'grey': '#6B7280',
+    'navy': '#1E3A8A',
+    'teal': '#14B8A6',
+    'maroon': '#800000',
+    'beige': '#F5F5DC',
+    'cream': '#FFFDD0',
+    'gold': '#FFD700',
+    'silver': '#C0C0C0',
+    'tan': '#D2B48C',
+    'khaki': '#C3B477',
+    'lavender': '#E6E6FA',
+    'mint': '#98FF98',
+    'olive': '#808000',
+    'coral': '#FF7F50',
+    'turquoise': '#40E0D0',
+    'indigo': '#4B0082',
+    'violet': '#EE82EE',
+    'magenta': '#FF00FF',
+    'cyan': '#00FFFF',
+    'lime': '#00FF00',
   };
   
   const color = getVariantColor(variant);
-  return color ? (colorMap[color] || '#000000') : '#000000';
+  if (!color) return '#000000';
+  
+  // Try case-insensitive lookup
+  const lowerColor = color.toLowerCase().trim();
+  return colorMap[lowerColor] || '#000000';
 }
 
 export default function ProductLandingPage({ slug }: ProductLandingPageProps) {

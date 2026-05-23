@@ -16,6 +16,99 @@ import {
   deleteProductVariant
 } from '../../lib/db';
 
+function parseVariantName(name: string): { size?: string; color?: string } {
+  // Try to parse "Size - Color" format
+  const parts = name.split(' - ');
+  if (parts.length === 2) {
+    const size = parts[0].trim();
+    const color = parts[1].trim();
+    const sizePatterns = /^(XS|S|M|L|XL|XXL|\d+XL?|\d+)$/i;
+    if (sizePatterns.test(size)) {
+      return { size, color };
+    }
+  }
+  
+  // Try to parse "Size Color" format (space separated)
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 2) {
+    const firstWord = words[0];
+    const sizePatterns = /^(XS|S|M|L|XL|XXL|\d+XL?|\d+)$/i;
+    if (sizePatterns.test(firstWord)) {
+      return { size: firstWord, color: words.slice(1).join(' ') };
+    }
+  }
+  
+  // Try to extract size from anywhere in the name
+  const sizeMatch = name.match(/\b(XS|S|M|L|XL|XXL|\d+XL?|\d+)\b/i);
+  if (sizeMatch) {
+    const size = sizeMatch[1];
+    const color = name.replace(sizeMatch[0], '').replace(/[-–]/g, '').trim();
+    if (color) {
+      return { size, color };
+    }
+  }
+  
+  return {};
+}
+
+function getVariantSize(variant: ProductVariant): string | undefined {
+  if (variant.size) return variant.size;
+  const parsed = parseVariantName(variant.name);
+  if (parsed.size) return parsed.size;
+  // Fallback: use the variant name as size if no pattern matches
+  return variant.name;
+}
+
+function getVariantColor(variant: ProductVariant): string | undefined {
+  if (variant.color) return variant.color;
+  const parsed = parseVariantName(variant.name);
+  return parsed.color;
+}
+
+function getVariantColorHex(variant: ProductVariant): string {
+  if (variant.color_hex) return variant.color_hex;
+  
+  const colorMap: Record<string, string> = {
+    'black': '#000000',
+    'white': '#FFFFFF',
+    'red': '#EF4444',
+    'blue': '#3B82F6',
+    'green': '#10B981',
+    'yellow': '#F59E0B',
+    'purple': '#8B5CF6',
+    'pink': '#EC4899',
+    'orange': '#F97316',
+    'brown': '#78350F',
+    'gray': '#6B7280',
+    'grey': '#6B7280',
+    'navy': '#1E3A8A',
+    'teal': '#14B8A6',
+    'maroon': '#800000',
+    'beige': '#F5F5DC',
+    'cream': '#FFFDD0',
+    'gold': '#FFD700',
+    'silver': '#C0C0C0',
+    'tan': '#D2B48C',
+    'khaki': '#C3B477',
+    'lavender': '#E6E6FA',
+    'mint': '#98FF98',
+    'olive': '#808000',
+    'coral': '#FF7F50',
+    'turquoise': '#40E0D0',
+    'indigo': '#4B0082',
+    'violet': '#EE82EE',
+    'magenta': '#FF00FF',
+    'cyan': '#00FFFF',
+    'lime': '#00FF00',
+  };
+  
+  const color = getVariantColor(variant);
+  if (!color) return '#000000';
+  
+  const lowerColor = color.toLowerCase().trim();
+  return colorMap[lowerColor] || '#000000';
+}
+
 export default function EditProductForm() {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
@@ -58,9 +151,9 @@ export default function EditProductForm() {
           setUpdatedVariants(variantsData.map(v => ({ 
             id: v.id, 
             name: v.name, 
-            size: v.size, 
-            color: v.color, 
-            color_hex: v.color_hex,
+            size: v.size || getVariantSize(v), 
+            color: v.color || getVariantColor(v), 
+            color_hex: v.color_hex || getVariantColorHex(v),
             price: v.price, 
             stock: v.stock 
           })));
@@ -575,7 +668,7 @@ export default function EditProductForm() {
                         style={{ backgroundColor: variant.color_hex }}
                       />
                     )}
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-5 gap-2">
                       <input
                         type="text"
                         value={variant.size || ''}
@@ -589,6 +682,13 @@ export default function EditProductForm() {
                         onChange={(e) => updateVariant(variant.id, 'color', e.target.value)}
                         className="px-2 py-1 border border-gray-300 rounded text-sm"
                         placeholder="Color"
+                      />
+                      <input
+                        type="color"
+                        value={variant.color_hex || '#000000'}
+                        onChange={(e) => updateVariant(variant.id, 'color_hex', e.target.value)}
+                        className="w-full h-8 border border-gray-300 rounded cursor-pointer"
+                        title="Color Hex"
                       />
                       <input
                         type="number"
