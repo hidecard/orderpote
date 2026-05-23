@@ -27,6 +27,8 @@ import CheckoutForm from './components/buyer/CheckoutForm';
 import OrderTracking from './components/buyer/OrderTracking';
 import MyOrders from './components/buyer/MyOrders';
 import StoreSettings from './components/dashboard/StoreSettings';
+import ProfileSettings from './components/dashboard/ProfileSettings';
+import AdminProfileSettings from './components/admin/AdminProfileSettings';
 import SeoMeta from './components/common/SeoMeta';
 import type { SeoMetaProps } from './components/common/SeoMeta';
 import { getStoreByUserId } from './lib/db';
@@ -253,6 +255,21 @@ function App() {
               }
             )}
           />
+          <Route
+            path="/admin/profile"
+            element={withSeo(
+              <AdminAccessGate>
+                <DashboardLayout title="Admin Profile">
+                  <AdminProfileSettings />
+                </DashboardLayout>
+              </AdminAccessGate>,
+              {
+                title: 'Admin ပရိုဖိုင်ဆက်တင်များ | OrderPote',
+                description: 'OrderPote Admin ပရိုဖိုင်အချက်အလက်များကို အပ်ဒိတ်လုပ်ပါ။',
+                noIndex: true,
+              }
+            )}
+          />
           
           {/* Seller Dashboard Routes */}
           <Route
@@ -401,6 +418,21 @@ function App() {
               {
                 title: 'ဆိုင်ဆက်တင်များ | OrderPote',
                 description: 'သင့် OrderPote ဆိုင် Profile၊ Logo နှင့် ငွေပေးချေမှုအချက်အလက်များကို စီမံခန့်ခွဲပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/profile-settings"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Profile Settings">
+                  <ProfileSettings />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'ပရိုဖိုင်ဆက်တင်များ | OrderPote',
+                description: 'သင့် OrderPote ပရိုဖိုင်အချက်အလက်များကို အပ်ဒိတ်လုပ်ပါ။',
                 noIndex: true,
               }
             )}

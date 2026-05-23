@@ -478,6 +478,54 @@ export async function updateUserSellerStatus(userId: string, isSeller: boolean):
   });
 }
 
+export async function updateUser(userId: string, updates: Partial<Omit<User, 'id' | 'email' | 'password' | 'is_seller' | 'created_at' | 'updated_at'>>): Promise<void> {
+  const updateFields: string[] = [];
+  const args: (string | null)[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.phone !== undefined) {
+    updateFields.push('phone = ?');
+    args.push(updates.phone);
+  }
+
+  if (updateFields.length === 0) return;
+
+  updateFields.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(userId);
+
+  await turso.execute({
+    sql: `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+    args,
+  });
+}
+
+export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
+  // First verify current password
+  const result = await turso.execute({
+    sql: 'SELECT password FROM users WHERE id = ?',
+    args: [userId],
+  });
+
+  if (result.rows.length === 0) return false;
+
+  const user = rowAs<{ password: string }>(result.rows[0]);
+
+  // Verify current password (in production, use proper password hashing)
+  if (user.password !== currentPassword) return false;
+
+  // Update password
+  await turso.execute({
+    sql: 'UPDATE users SET password = ?, updated_at = ? WHERE id = ?',
+    args: [newPassword, new Date().toISOString(), userId],
+  });
+
+  return true;
+}
+
 // Dashboard queries
 export async function getDashboardStats(userId: string) {
   const revenueResult = await turso.execute({
