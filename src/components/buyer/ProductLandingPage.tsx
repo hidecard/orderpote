@@ -314,6 +314,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                     {Array.from(new Set(variants.filter(v => getVariantSize(v)).map(v => getVariantSize(v)))).map((size) => {
                       const sizeVariants = variants.filter(v => getVariantSize(v) === size);
                       const hasStock = sizeVariants.some(v => v.stock > 0);
+                      const stockCount = sizeVariants.reduce((sum, v) => sum + v.stock, 0);
                       const isSelected = selectedVariant && getVariantSize(selectedVariant) === size;
                       return (
                         <button
@@ -323,13 +324,25 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                             if (availableVariant) setSelectedVariant(availableVariant);
                           }}
                           disabled={!hasStock}
-                          className={`px-4 py-2 rounded-lg border-2 font-medium transition-colors ${
+                          className={`px-4 py-2 rounded-lg border-2 font-medium transition-all relative ${
                             isSelected
-                              ? 'border-[#1a7f8c] bg-[#1a7f8c] text-white'
-                              : 'border-gray-300 hover:border-[#1a7f8c] text-gray-700'
-                          } ${!hasStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              ? 'border-[#1a7f8c] bg-[#1a7f8c] text-white shadow-md'
+                              : hasStock
+                                ? 'border-gray-300 hover:border-[#1a7f8c] hover:bg-gray-50 text-gray-700'
+                                : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                          }`}
                         >
                           {size}
+                          {hasStock && stockCount > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                              {stockCount > 99 ? '99+' : stockCount}
+                            </span>
+                          )}
+                          {!hasStock && (
+                            <span className="absolute -top-2 -right-2 bg-gray-400 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                              မရှိ
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -345,6 +358,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                     {Array.from(new Set(variants.filter(v => getVariantColor(v)).map(v => getVariantColor(v)))).map((color) => {
                       const colorVariants = variants.filter(v => getVariantColor(v) === color);
                       const hasStock = colorVariants.some(v => v.stock > 0);
+                      const stockCount = colorVariants.reduce((sum, v) => sum + v.stock, 0);
                       const isSelected = selectedVariant && getVariantColor(selectedVariant) === color;
                       const colorHex = getVariantColorHex(colorVariants[0]);
                       return (
@@ -355,18 +369,30 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
                             if (availableVariant) setSelectedVariant(availableVariant);
                           }}
                           disabled={!hasStock}
-                          className={`relative w-10 h-10 rounded-full border-2 transition-all ${
+                          className={`relative w-12 h-12 rounded-full border-3 transition-all shadow-sm ${
                             isSelected
-                              ? 'border-[#1a7f8c] ring-2 ring-[#1a7f8c] ring-offset-2'
-                              : 'border-gray-300 hover:border-[#1a7f8c]'
-                          } ${!hasStock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              ? 'border-[#1a7f8c] ring-4 ring-[#1a7f8c] ring-offset-2 scale-110'
+                              : hasStock
+                                ? 'border-gray-300 hover:border-[#1a7f8c] hover:scale-105'
+                                : 'border-gray-200 opacity-50 cursor-not-allowed grayscale'
+                          }`}
                           style={{ backgroundColor: colorHex }}
                           title={color}
                         >
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-3 h-3 bg-white rounded-full" />
+                              <div className="w-4 h-4 bg-white rounded-full shadow-md" />
                             </div>
+                          )}
+                          {hasStock && stockCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md">
+                              {stockCount > 99 ? '99+' : stockCount}
+                            </span>
+                          )}
+                          {!hasStock && (
+                            <span className="absolute -top-1 -right-1 bg-gray-400 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md">
+                              ✕
+                            </span>
                           )}
                         </button>
                       );

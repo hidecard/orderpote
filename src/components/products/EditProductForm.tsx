@@ -156,6 +156,8 @@ export default function EditProductForm() {
       };
       setUpdatedVariants([...updatedVariants, newVariant]);
       setCurrentVariant({ name: '', size: '', color: '', color_hex: '', price: '', stock: '' });
+    } else {
+      alert('စျေးနှုန်းနှင့် လက်ကျန်ကို ဖြည့်သွင်းပါ (Please fill in price and stock)');
     }
   };
 
@@ -532,7 +534,6 @@ export default function EditProductForm() {
                   onChange={(e) => setCurrentVariant({ ...currentVariant, price: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="0"
-                  required
                 />
               </div>
               <div>
@@ -545,7 +546,6 @@ export default function EditProductForm() {
                   onChange={(e) => setCurrentVariant({ ...currentVariant, stock: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="0"
-                  required
                 />
               </div>
             </div>
