@@ -36,7 +36,7 @@ import './index.css'
 import './App.css'
 
 const defaultPageDescription =
-  'Create product links, accept mobile banking payments, and manage orders in one dashboard built for Myanmar sellers.';
+  'Product Link များဖန်တီးပါ၊ Mobile Banking ဖြင့် ငွေပေးချေမှုများကို လက်ခံပါ၊ အော်ဒါများကို တစ်နေရာတည်းတွင် စနစ်တကျ စီမံခန့်ခွဲပါ။';
 
 function withSeo(element: ReactNode, meta: SeoMetaProps) {
   return (
@@ -127,7 +127,11 @@ function OrderDetailWrapper() {
 
 function ProductLandingPageWrapper() {
   const { slug } = useParams<{ slug: string }>();
-  return <ProductLandingPage slug={slug || ''} />;
+  return withSeo(<ProductLandingPage slug={slug || ''} />, {
+    title: 'ပစ္စည်း | OrderPote',
+    description: 'OrderPote တွင် ပစ္စည်းများကြည့်ရှုပြီး မှာယူပါ။',
+    type: 'product',
+  });
 }
 
 function CheckoutFormWrapper() {
@@ -138,8 +142,8 @@ function CheckoutFormWrapper() {
   return withSeo(
     <CheckoutForm productSlug={productSlug} variantId={variantId} quantity={quantity} />,
     {
-      title: 'Checkout | OrderPote',
-      description: 'Complete your order securely through OrderPote.',
+      title: 'အော်ဒါတင်ရန် | OrderPote',
+      description: 'OrderPote မှတစ်ဆင့် သင့်အော်ဒါကို လုံခြုံစွာ ပြီးမြောက်အောင်လုပ်ပါ။',
       noIndex: true,
     }
   );
@@ -148,8 +152,8 @@ function CheckoutFormWrapper() {
 function OrderTrackingWrapper() {
   const { orderId } = useParams<{ orderId: string }>();
   return withSeo(<OrderTracking orderId={orderId || ''} />, {
-    title: 'Track Order | OrderPote',
-    description: 'Check the latest status of your OrderPote order.',
+    title: 'အော်ဒါလိုက်လိုက်ရန် | OrderPote',
+    description: 'သင့် OrderPote အော်ဒါ၏ နောက်ဆုံးအခြေအနေကို စစ်ဆေးပါ။',
     noIndex: true,
   });
 }
@@ -163,22 +167,22 @@ function App() {
           <Route
             path="/"
             element={withSeo(<LandingPage />, {
-              title: 'OrderPote | Social Commerce Order Management',
+              title: 'OrderPote | Social Commerce အော်ဒါစီမံခန့်ခွဲမှုစနစ်',
               description: defaultPageDescription,
             })}
           />
           <Route
             path="/register"
             element={withSeo(<RegisterForm />, {
-              title: 'Create Seller Account | OrderPote',
-              description: 'Start selling online with OrderPote and manage product links, payments, and orders in one place.',
+              title: 'ရောင်းချသူ အကောင့်ဖွင့်ရန် | OrderPote',
+              description: 'OrderPote ဖြင့် အွန်လိုင်းမှ စတင်ရောင်းချပါ။ Product Link များ၊ ငွေပေးချေမှုများနှင့် အော်ဒါများကို တစ်နေရာတည်းတွင် စီမံခန့်ခွဲပါ။',
             })}
           />
           <Route
             path="/login"
             element={withSeo(<LoginForm />, {
-              title: 'Login | OrderPote',
-              description: 'Log in to your OrderPote seller dashboard.',
+              title: 'အကောင့်ဝင်ရန် | OrderPote',
+              description: 'OrderPote ရောင်းချသူ Dashboard သို့ ဝင်ရောက်ပါ။',
               noIndex: true,
             })}
           />
@@ -187,23 +191,23 @@ function App() {
           <Route
             path="/become-seller"
             element={withSeo(<BecomeSeller />, {
-              title: 'Become a Seller | OrderPote',
-              description: 'Set up your OrderPote seller profile and start receiving online orders.',
+              title: 'ရောင်းချသူဖြစ်ရန် | OrderPote',
+              description: 'OrderPote ရောင်းချသူ Profile တည်ဆောက်ပြီး အွန်လိုင်းအော်ဒါများ လက်ခံရန် စတင်ပါ။',
             })}
           />
           <Route
             path="/seller-pending"
             element={withSeo(<SellerPending />, {
-              title: 'Seller Approval Pending | OrderPote',
-              description: 'Your OrderPote seller account is waiting for approval.',
+              title: 'ရောင်းချသူ အတည်ပြုစောင့်ဆိုင်းဆဲ | OrderPote',
+              description: 'သင့် OrderPote ရောင်းချသူ အကောင့်ကို အတည်ပြုရန် စောင့်ဆိုင်းနေပါသည်။',
               noIndex: true,
             })}
           />
           <Route
             path="/wallet-setup"
             element={withSeo(<WalletSetup />, {
-              title: 'Wallet Setup | OrderPote',
-              description: 'Add mobile wallet information for receiving OrderPote payments.',
+              title: 'Wallet တည်ဆောက်ရန် | OrderPote',
+              description: 'OrderPote ငွေပေးချေမှုများ လက်ခံရန် Mobile Wallet အချက်အလက်များ ထည့်ပါ။',
               noIndex: true,
             })}
           />
@@ -217,8 +221,8 @@ function App() {
                 </DashboardLayout>
               </AdminAccessGate>,
               {
-                title: 'Store Approvals | OrderPote',
-                description: 'Review and approve seller stores in the OrderPote admin dashboard.',
+                title: 'ဆိုင်အတည်ပြုမှုများ | OrderPote',
+                description: 'OrderPote Admin Dashboard တွင် ရောင်းချသူဆိုင်များကို စစ်ဆေးအတည်ပြုပါ။',
                 noIndex: true,
               }
             )}
@@ -232,8 +236,8 @@ function App() {
                 </DashboardLayout>
               </AdminAccessGate>,
               {
-                title: 'Seller Management | OrderPote',
-                description: 'Manage seller accounts in the OrderPote admin dashboard.',
+                title: 'ရောင်းချသူစီမံခန့်ခွဲမှု | OrderPote',
+                description: 'OrderPote Admin Dashboard တွင် ရောင်းချသူအကောင့်များကို စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}
@@ -247,8 +251,8 @@ function App() {
                 </DashboardLayout>
               </AdminAccessGate>,
               {
-                title: 'Plan Management | OrderPote',
-                description: 'Manage subscription plans in the OrderPote admin dashboard.',
+                title: 'ပလန်စီမံခန့်ခွဲမှု | OrderPote',
+                description: 'OrderPote Admin Dashboard တွင် စာချုပ်ပလန်များကို စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}
@@ -265,7 +269,7 @@ function App() {
               </SellerAccessGate>,
               {
                 title: 'Dashboard | OrderPote',
-                description: 'View seller performance, revenue, and order activity in OrderPote.',
+                description: 'OrderPote တွင် ရောင်းချသူစွမ်းဆောင်ရည်၊ ဝင်ငွေနှင့် အော်ဒါလှုပ်ရှားမှုများကို ကြည့်ရှုပါ။',
                 noIndex: true,
               }
             )}
@@ -279,8 +283,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Products | OrderPote',
-                description: 'Create and manage product links for your OrderPote store.',
+                title: 'ပစ္စည်းများ | OrderPote',
+                description: 'သင့် OrderPote ဆိုင်အတွက် Product Link များဖန်တီးနှင့် စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}
@@ -294,8 +298,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Discounts | OrderPote',
-                description: 'Create and manage discounts for your OrderPote products.',
+                title: 'လျှော့ဈေးများ | OrderPote',
+                description: 'သင့် OrderPote ပစ္စည်းများအတွက် လျှော့ဈေးများဖန်တီးနှင့် စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}
@@ -309,8 +313,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Add Product | OrderPote',
-                description: 'Add a new product and generate a shareable OrderPote product link.',
+                title: 'ပစ္စည်းထည့်ရန် | OrderPote',
+                description: 'ပစ္စည်းအသစ်ထည့်ပြီး မျှဝေနိုင်သော OrderPote Product Link ဖန်တီးပါ။',
                 noIndex: true,
               }
             )}
@@ -324,8 +328,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Edit Product | OrderPote',
-                description: 'Update product details, variants, images, and availability in OrderPote.',
+                title: 'ပစ္စည်းပြင်ဆင်ရန် | OrderPote',
+                description: 'OrderPote တွင် ပစ္စည်းအသေးစိတ်၊ အမျိုးအစားများ၊ ပုံများနှင့် ရရှိနိုင်မှုကို အပ်ဒိတ်လုပ်ပါ။',
                 noIndex: true,
               }
             )}
@@ -339,8 +343,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Product Traffic | OrderPote',
-                description: 'Review product link visits and buyer traffic in OrderPote.',
+                title: 'ပစ္စည်းလာရောက်မှု | OrderPote',
+                description: 'OrderPote တွင် Product Link လှုပ်ရှားမှုနှင့် ဝယ်သူလာရောက်မှုများကို ကြည့်ရှုပါ။',
                 noIndex: true,
               }
             )}
@@ -354,8 +358,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Orders | OrderPote',
-                description: 'Manage customer orders and payment checks in OrderPote.',
+                title: 'အော်ဒါများ | OrderPote',
+                description: 'OrderPote တွင် ဖောက်သည်အော်ဒါများနှင့် ငွေပေးချေမှုစစ်ဆေးမှုများကို စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}
@@ -369,8 +373,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Order Details | OrderPote',
-                description: 'Review order details, buyer information, and payment status in OrderPote.',
+                title: 'အော်ဒါအသေးစိတ် | OrderPote',
+                description: 'OrderPote တွင် အော်ဒါအသေးစိတ်၊ ဝယ်သူအချက်အလက်နှင့် ငွေပေးချေမှုအခြေအနေကို ကြည့်ရှုပါ။',
                 noIndex: true,
               }
             )}
@@ -384,8 +388,8 @@ function App() {
                 </DashboardLayout>
               </PrivateAccessGate>,
               {
-                title: 'Notifications | OrderPote',
-                description: 'View OrderPote account and order notifications.',
+                title: 'အသိပေးချက်များ | OrderPote',
+                description: 'OrderPote အကောင့်နှင့် အော်ဒါအသိပေးချက်များကို ကြည့်ရှုပါ။',
                 noIndex: true,
               }
             )}
@@ -399,8 +403,8 @@ function App() {
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'Store Settings | OrderPote',
-                description: 'Manage your OrderPote store profile, logo, and payment information.',
+                title: 'ဆိုင်ဆက်တင်များ | OrderPote',
+                description: 'သင့် OrderPote ဆိုင် Profile၊ Logo နှင့် ငွေပေးချေမှုအချက်အလက်များကို စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}
@@ -413,8 +417,8 @@ function App() {
           <Route
             path="/my-orders"
             element={withSeo(<MyOrders />, {
-              title: 'My Orders | OrderPote',
-              description: 'Find and review your recent OrderPote orders.',
+              title: 'ကျွန်ုပ်၏အော်ဒါများ | OrderPote',
+              description: 'သင့် OrderPote အော်ဒါများကို ရှာဖွေပြီး ကြည့်ရှုပါ။',
               noIndex: true,
             })}
           />

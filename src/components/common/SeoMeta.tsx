@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 
 const SITE_NAME = 'OrderPote';
-const DEFAULT_TITLE = 'OrderPote | Social Commerce Order Management';
+const DEFAULT_TITLE = 'OrderPote | Social Commerce အော်ဒါစီမံခန့်ခွဲမှုစနစ်';
 const DEFAULT_DESCRIPTION =
-  'Create product links, accept mobile banking payments, and manage orders in one dashboard built for Myanmar sellers.';
+  'Product Link များဖန်တီးပါ၊ Mobile Banking ဖြင့် ငွေပေးချေမှုများကို လက်ခံပါ၊ အော်ဒါများကို တစ်နေရာတည်းတွင် စနစ်တကျ စီမံခန့်ခွဲပါ။';
 const DEFAULT_IMAGE = '/logo.png';
 
 export interface SeoMetaProps {

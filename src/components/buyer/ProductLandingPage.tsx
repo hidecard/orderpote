@@ -9,7 +9,7 @@ interface ProductLandingPageProps {
 }
 
 function getProductDescription(product: Product) {
-  return product.description || `Order ${product.name} on OrderPote.`;
+  return product.description || `${product.name} ကို OrderPote တွင် မှာယူပါ။`;
 }
 
 export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
@@ -99,8 +99,8 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     return (
       <>
         <SeoMeta
-          title="Loading Product | OrderPote"
-          description="Loading this OrderPote product page."
+          title="ပစ္စည်းဖွင့်နေသည် | OrderPote"
+          description="OrderPote ပစ္စည်းစာမျက်နှာကို ဖွင့်နေသည်။"
         />
         <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -113,8 +113,8 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     return (
       <>
         <SeoMeta
-          title="Product Not Found | OrderPote"
-          description="This OrderPote product may have been removed or is no longer available."
+          title="ပစ္စည်းမတွေ့ပါ | OrderPote"
+          description="ဤ OrderPote ပစ္စည်းကို ဖျက်သိမ်းထားပါသည် သို့မဟုတ် ရရှိနိုင်ခြင်းမရှိပါ။"
           noIndex
         />
         <div className="min-h-screen flex items-center justify-center">
@@ -132,7 +132,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
       <>
         <SeoMeta
           title={`${product.name} | OrderPote`}
-          description="This OrderPote product is temporarily unavailable."
+          description="ဤ OrderPote ပစ္စည်းသည် ယာယီရရှိနိုင်ခြင်းမရှိပါ။"
           image={product.cover_image_url || images[0] || '/logo.png'}
           type="product"
           noIndex
@@ -149,11 +149,19 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
 
   const totalPrice = selectedVariant ? selectedVariant.price * quantity : 0;
 
+  const seoTitle = store 
+    ? `${product.name} | ${store.name} | OrderPote`
+    : `${product.name} | OrderPote`;
+  
+  const seoDescription = store
+    ? `${getProductDescription(product)} ${store.name} တွင် OrderPote ဖြင့် ဝယ်ယူပါ။`
+    : getProductDescription(product);
+
   return (
     <div className="min-h-screen bg-[#f8fbfc]">
       <SeoMeta
-        title={`${product.name} | OrderPote`}
-        description={getProductDescription(product)}
+        title={seoTitle}
+        description={seoDescription}
         image={product.cover_image_url || images[0] || '/logo.png'}
         type="product"
       />
