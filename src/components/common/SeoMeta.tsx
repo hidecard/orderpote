@@ -39,19 +39,6 @@ function upsertMeta(attribute: 'name' | 'property', key: string, content: string
   element.content = content;
 }
 
-function upsertMetaWithCharset(attribute: 'name' | 'property', key: string, content: string) {
-  let element = document.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
-
-  if (!element) {
-    element = document.createElement('meta');
-    element.setAttribute(attribute, key);
-    element.setAttribute('charset', 'utf-8');
-    document.head.appendChild(element);
-  }
-
-  element.content = content;
-}
-
 function upsertCanonical(url: string) {
   let element = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
 
