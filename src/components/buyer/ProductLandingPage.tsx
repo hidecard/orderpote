@@ -128,12 +128,14 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
   }
 
   if (!product.is_active) {
+    const seoUrl = typeof window !== 'undefined' ? window.location.href : '';
     return (
       <>
         <SeoMeta
           title={`${product.name} | OrderPote`}
           description="ဤ OrderPote ပစ္စည်းသည် ယာယီရရှိနိုင်ခြင်းမရှိပါ။"
           image={product.cover_image_url || images[0] || '/logo.png'}
+          url={seoUrl}
           type="product"
           noIndex
         />
@@ -157,12 +159,16 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     ? `${getProductDescription(product)} ${store.name} တွင် OrderPote ဖြင့် ဝယ်ယူပါ။`
     : getProductDescription(product);
 
+  const seoImage = product.cover_image_url || images[0] || '/logo.png';
+  const seoUrl = typeof window !== 'undefined' ? window.location.href : '';
+
   return (
     <div className="min-h-screen bg-[#f8fbfc]">
       <SeoMeta
         title={seoTitle}
         description={seoDescription}
-        image={product.cover_image_url || images[0] || '/logo.png'}
+        image={seoImage}
+        url={seoUrl}
         type="product"
       />
       <div className="max-w-4xl mx-auto p-4">
