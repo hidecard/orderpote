@@ -39,6 +39,19 @@ function upsertMeta(attribute: 'name' | 'property', key: string, content: string
   element.content = content;
 }
 
+function upsertMetaWithCharset(attribute: 'name' | 'property', key: string, content: string) {
+  let element = document.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
+
+  if (!element) {
+    element = document.createElement('meta');
+    element.setAttribute(attribute, key);
+    element.setAttribute('charset', 'utf-8');
+    document.head.appendChild(element);
+  }
+
+  element.content = content;
+}
+
 function upsertCanonical(url: string) {
   let element = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
 
@@ -64,6 +77,8 @@ export default function SeoMeta({
       url || (typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '');
     const absoluteUrl = pageUrl ? getAbsoluteUrl(pageUrl) : '';
     const absoluteImage = getAbsoluteUrl(image);
+
+    console.log('SEO Meta:', { title, description, image, absoluteImage, absoluteUrl, type });
 
     document.title = title;
 
