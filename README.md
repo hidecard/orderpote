@@ -20,6 +20,9 @@ OrderPote is a comprehensive e-commerce platform designed for Myanmar sellers to
 - **Payment Verification**: ငွေလွှဲ Screenshot ကို တိုက်ရိုက် Upload တင်နိုင်ခြင်း။
 - **Order Tracking**: မိမိအော်ဒါ၏ အခြေအနေကို အချိန်နှင့်တပြေးညီ စစ်ဆေးနိုင်ခြင်း။
 - **Digital Receipts**: ဝယ်ယူပြီးပါက Digital ပြေစာများကို ချက်ချင်း ရရှိနိုင်ခြင်း။
+- **PDF Receipt Download**: အော်ဒါ ပြေစာကို PDF အဖြစ် ဒေါင်းလုဒ်လုပ်နိုင်ခြင်း။
+- **Myanmar Language Support**: မြန်မာဘာသာစကား ဖောင့်များကို PDF တွင် အလွယ်တကူ ပြသနိုင်ခြင်း။
+- **Seller Branding**: ရောင်းချသူ၏ ဆိုင်အမည်နှင့် Logo ကို ပြေစာတွင် ပါဝင်စေခြင်း။
 
 ### 🛡️ Admin Dashboard (စီမံခန့်ခွဲသူများအတွက်)
 - **Store Approvals**: ဆိုင်အသစ်များကို စစ်ဆေးပြီး အတည်ပြုပေးနိုင်ခြင်း။
