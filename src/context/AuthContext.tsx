@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { User, Store, Device } from '../lib/schema';
+import type { User } from '../lib/schema';
 import { getUserByEmail, createUser, updateUserSellerStatus, getStoreByUserId, getDevicesByStoreId, createDevice, updateDevice, recordDeviceUsage, getStaffByUserId } from '../lib/db';
 
 interface AuthContextType {
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading] = useState(false);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const user = await getUserByEmail(email);
     if (user && user.password === password) {
       setUser(user);
@@ -70,7 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (store || staff) {
           const targetStore = store || (staff ? await getStoreByUserId(staff.store_id) : null);
-          if (!targetStore) return;
+          if (!targetStore) {
+            // Still allow login; store/device tracking is best-effort
+            return user;
+          }
           
           const deviceIdentifier = getDeviceIdentifier();
           const deviceType = getDeviceType();

@@ -539,7 +539,7 @@ export async function getStaffByStoreId(storeId: string): Promise<Staff[]> {
   return result.rows.map(row => rowAs<Staff>(row));
 }
 
-export async function createStaff(staff: Omit<Staff, 'id' | 'created_at' | 'updated_at'>): Promise<{ staff: Staff; password: string }> {
+export async function createStaff(staff: Omit<Staff, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<{ staff: Staff; password: string }> {
   const id = generateId();
   const now = new Date().toISOString();
   

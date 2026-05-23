@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Users, Plus, Edit, Trash2, Mail, Phone, Shield, Check, X } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Mail, Phone, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getStoreByUserId, getStaffByStoreId, createStaff, updateStaff, deleteStaff } from '../../lib/db';
 import type { Staff as StaffType, Store } from '../../lib/schema';

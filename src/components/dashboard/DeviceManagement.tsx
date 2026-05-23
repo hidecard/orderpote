@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Smartphone, Tablet, Monitor, Clock, ChevronDown, ChevronUp, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getStoreByUserId, getDevicesByStoreId, getDeviceUsageByDeviceId } from '../../lib/db';
-import type { Device as DeviceType, Store, DeviceUsage } from '../../lib/schema';
+import type { Device as DeviceType, DeviceUsage } from '../../lib/schema';
 
 export default function DeviceManagement() {
   const { user } = useAuth();
