@@ -127,11 +127,7 @@ function OrderDetailWrapper() {
 
 function ProductLandingPageWrapper() {
   const { slug } = useParams<{ slug: string }>();
-  return withSeo(<ProductLandingPage slug={slug || ''} />, {
-    title: 'ပစ္စည်း | OrderPote',
-    description: 'OrderPote တွင် ပစ္စည်းများကြည့်ရှုပြီး မှာယူပါ။',
-    type: 'product',
-  });
+  return <ProductLandingPage slug={slug || ''} />;
 }
 
 function CheckoutFormWrapper() {
