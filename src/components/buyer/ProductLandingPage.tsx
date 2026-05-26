@@ -253,7 +253,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
     ? `${getProductDescription(product)} ${store.name} တွင် OrderPote ဖြင့် ဝယ်ယူပါ။`
     : getProductDescription(product);
 
-  const seoImage = product.cover_image_url || images[0] || '/logo.png';
+  const seoImage = product.cover_image_url || images[0] || 'https://orderpote.vercel.app/logo.png';
   const seoUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   return (

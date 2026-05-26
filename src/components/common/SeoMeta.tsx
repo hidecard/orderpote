@@ -77,9 +77,11 @@ export default function SeoMeta({
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:image', absoluteImage);
+    upsertMeta('property', 'og:image:alt', title);
     if (absoluteUrl) upsertMeta('property', 'og:url', absoluteUrl);
 
     upsertMeta('name', 'twitter:card', 'summary_large_image');
+    upsertMeta('name', 'twitter:site', '@orderpote');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
     upsertMeta('name', 'twitter:image', absoluteImage);
