@@ -39,6 +39,8 @@ import type { Store } from './lib/schema';
 import './index.css'
 import './App.css'
 
+import { Skeleton } from './components/ui/Skeleton';
+
 const defaultPageDescription =
   'Product Link များဖန်တီးပါ၊ Mobile Banking ဖြင့် ငွေပေးချေမှုများကို လက်ခံပါ၊ အော်ဒါများကို တစ်နေရာတည်းတွင် စနစ်တကျ စီမံခန့်ခွဲပါ။';
 
@@ -85,8 +87,22 @@ function SellerAccessGate({ children }: { children: ReactNode }) {
 
   if (isLoading || isCheckingStore) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+        <div className="w-full max-w-4xl space-y-8">
+          <div className="flex justify-between items-center">
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-12 w-12 rounded-full" />
+          </div>
+          <Skeleton className="h-64 w-full rounded-[2.5rem]" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-32 rounded-2xl" />
+            <Skeleton className="h-32 rounded-2xl" />
+            <Skeleton className="h-32 rounded-2xl" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -104,7 +120,7 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
       </div>
     );
   }
@@ -121,7 +137,7 @@ function PrivateAccessGate({ children }: { children: ReactNode }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
       </div>
     );
   }
@@ -437,13 +453,13 @@ function App() {
             path="/profile-settings"
             element={withSeo(
               <SellerAccessGate>
-                <DashboardLayout title="Profile Settings">
+                <DashboardLayout title="အကောင့် ဆက်တင်များ">
                   <ProfileSettings />
                 </DashboardLayout>
               </SellerAccessGate>,
               {
-                title: 'ပရိုဖိုင်ဆက်တင်များ | OrderPote',
-                description: 'သင့် OrderPote ပရိုဖိုင်အချက်အလက်များကို အပ်ဒိတ်လုပ်ပါ။',
+                title: 'အကောင့် ဆက်တင်များ | ZayLink',
+                description: 'သင့်ပရိုဖိုင်နှင့် ငွေပေးချေမှု အကောင့်များကို စီမံခန့်ခွဲပါ။',
                 noIndex: true,
               }
             )}

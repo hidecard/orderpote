@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getDashboardStats, getSalesData, getTopProducts, getLeastSellingProducts, getLowStockVariants, getSellerSubscriptionWithPlan } from '../../lib/db';
 import { useAuth } from '../../context/AuthContext';
 import type { SubscriptionWithPlan } from '../../lib/schema';
+import { DashboardSkeleton } from '../ui/Skeleton';
 
 type SalesDataPoint = { name: string; sales: number };
 type TopProductDataPoint = { name: string; value: number; color: string };
@@ -59,11 +60,7 @@ export default function Dashboard() {
   }, [user]);
 
   if (isLoading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a7f8c]"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Calculate days remaining for subscription/trial

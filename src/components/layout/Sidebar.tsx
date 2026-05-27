@@ -1,11 +1,16 @@
-import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Users, Smartphone } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Users, Smartphone, ChevronRight, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
 import { getUnreadNotificationCount } from '../../lib/db';
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const isAdmin = isAdminUser(user);
@@ -23,10 +28,14 @@ export default function Sidebar() {
     }
 
     fetchUnreadCount();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    if (onClose) onClose();
+  }, [location.pathname]);
 
   const menuItems = isAdmin
     ? [
@@ -46,57 +55,84 @@ export default function Sidebar() {
         { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings' },
         { icon: Users, label: 'ဝန်ထမ်းစီမံခန့်ခွဲမှု', path: '/staff-management' },
         { icon: Smartphone, label: 'ကိရိယာစီမံခန့်ခွဲမှု', path: '/device-management' },
-        { icon: User, label: 'ပရိုဖိုင်ဆက်တင်များ', path: '/profile-settings' },
-        { icon: Wallet, label: 'ငွေပေးချေမှုအိတ်', path: '/wallet-setup' },
+        { icon: User, label: 'အကောင့် ဆက်တင်များ', path: '/profile-settings' },
       ];
 
   return (
-    <aside className="relative flex w-full max-w-xs min-h-0 flex-col border-r border-gray-200 bg-white p-4 md:h-screen md:w-64 md:sticky md:top-0 md:self-start">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1a7f8c]">OrderPote</h1>
-      </div>
-      
-      <nav className="flex-1 overflow-y-auto pr-1 space-y-2">
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-[#1a7f8c]/10 text-[#1a7f8c] font-bold' 
-                  : 'text-gray-700 hover:bg-[#1a7f8c]/5 hover:text-[#1a7f8c]'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="flex-1">{item.label}</span>
-              {item.path === '/notifications' && unreadCount > 0 && (
-                <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-brand-dark/20 backdrop-blur-sm transition-opacity md:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <button
-          onClick={logout}
-          className="flex w-full items-center justify-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-red-600 transition-colors hover:bg-red-100"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>အကောင့်ထွက်မည်</span>
-        </button>
-
-        {user && (
-          <div className="mt-4 space-y-1 text-center text-sm text-gray-600">
-            <p className="font-medium text-gray-800">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.phone}</p>
+      {/* Sidebar Content */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white p-6 shadow-2xl transition-transform duration-300 ease-in-out md:sticky md:top-0 md:z-auto md:h-screen md:translate-x-0 md:border-r md:border-gray-100 md:shadow-none
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="mb-10 flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <img src="/real-logo.png" alt="ZayLink Logo" className="h-8 w-auto" />
+            <h1 className="text-xl font-black text-brand-dark tracking-tighter">Zay<span className="text-brand-primary">Link</span></h1>
           </div>
-        )}
-      </div>
-    </aside>
+          <button 
+            onClick={onClose}
+            className="rounded-xl p-2 text-gray-400 hover:bg-gray-50 md:hidden"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        <nav className="flex-1 overflow-y-auto pr-1 space-y-1.5 scrollbar-hide">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-300 group ${
+                  isActive 
+                    ? 'bg-brand-dark text-white font-bold shadow-xl shadow-brand-dark/20 scale-[1.02]' 
+                    : 'text-gray-500 hover:bg-brand-primary/5 hover:text-brand-primary'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 ${isActive ? 'text-brand-primary' : 'group-hover:text-brand-primary'}`} />
+                <span className="flex-1 text-sm tracking-tight">{item.label}</span>
+                {item.path === '/notifications' && unreadCount > 0 && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${isActive ? 'bg-brand-primary text-brand-dark' : 'bg-red-500 text-white'}`}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mt-8 pt-8 border-t border-gray-100">
+          <button
+            onClick={logout}
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-red-50 px-5 py-4 text-red-600 transition-all hover:bg-red-100 font-black text-xs uppercase tracking-widest"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
+
+          {user && (
+            <div className="mt-6 flex items-center gap-3 px-2">
+              <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-black">
+                {user.name.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black text-brand-dark truncate">{user.name}</p>
+                <p className="text-[10px] font-bold text-gray-400 truncate">{user.phone}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

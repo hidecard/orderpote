@@ -1,270 +1,182 @@
-import { ShoppingBag, Shield, BarChart, CheckCircle, ArrowRight, Smartphone, Clock, MousePointer2, Share2, CreditCard } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Smartphone, LayoutDashboard, Globe, ShieldCheck, ChevronRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
+    <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-brand-primary selection:text-brand-dark">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="OrderPote Logo" className="h-20 w-auto" />
+            <img src="/real-logo.png" alt="ZayLink Logo" className="h-10 w-auto" />
+            <span className="text-xl font-black text-brand-dark tracking-tighter hidden sm:block">Zay<span className="text-brand-primary">Link</span></span>
           </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-base font-medium text-gray-700 hover:text-[#1a7f8c] transition-colors">လုပ်ဆောင်ချက်များ</a>
-            <a href="#how-it-works" className="text-base font-medium text-gray-700 hover:text-[#1a7f8c] transition-colors">အသုံးပြုပုံ</a>
-            <a href="/login" className="text-base font-medium text-gray-700 hover:text-[#1a7f8c] transition-colors">အကောင့်ဝင်ရန်</a>
+          <div className="hidden md:flex items-center space-x-10">
+            <a href="#features" className="text-xs font-black text-gray-400 hover:text-brand-primary transition-colors tracking-widest uppercase">Features</a>
+            <a href="#how-it-works" className="text-xs font-black text-gray-400 hover:text-brand-primary transition-colors tracking-widest uppercase">Process</a>
+            <a href="/login" className="text-xs font-black text-brand-dark hover:text-brand-primary transition-colors tracking-widest uppercase">Login</a>
             <a
               href="/register"
-              className="bg-[#1a7f8c] text-white px-6 py-2.5 rounded-lg text-base font-bold hover:bg-[#156a75] transition-all shadow-sm"
+              className="bg-brand-primary text-brand-dark px-8 py-3 rounded-full text-xs font-black hover:bg-brand-dark hover:text-white transition-all shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transform"
             >
-              အခမဲ့စတင်ရောင်းချမည်
+              Get Started
             </a>
           </div>
-          <div className="md:hidden">
-             <a
-              href="/register"
-              className="bg-[#1a7f8c] text-white px-4 py-2 rounded-lg text-sm font-bold"
-            >
-              စတင်မည်
-            </a>
-          </div>
+          <a
+            href="/register"
+            className="md:hidden bg-brand-primary text-brand-dark px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest"
+          >
+            Start Now
+          </a>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-16 pb-24 overflow-hidden bg-[#f8fbfc]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
+      <section className="relative pt-20 pb-32 overflow-hidden bg-gray-50/50">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-brand-dark/5 -skew-x-12 translate-x-1/4"></div>
+        
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#1a7f8c]/10 text-[#1a7f8c] text-sm font-bold mb-6">
-                မြန်မာနိုင်ငံ၏ အကောင်းဆုံး Social Commerce Dashboard
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-100 shadow-sm text-brand-primary text-[10px] font-black tracking-widest uppercase mb-8">
+                <span className="flex h-2 w-2 rounded-full bg-brand-primary animate-pulse"></span>
+                Social Commerce Platform
               </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight text-gray-900 mb-6 leading-tight">
-                အွန်လိုင်းမှာ ပစ္စည်းရောင်းရတာ <br/>
-                <span className="text-[#1a7f8c]">ပိုမိုလွယ်ကူ မြန်ဆန်စေရမည်</span>
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-brand-dark mb-8 leading-[0.95]">
+                အရောင်းအဝယ်ကို <br/>
+                <span className="text-brand-primary underline decoration-brand-dark/10 underline-offset-8">Link တစ်ခုတည်း</span> <br/>
+                ဖြင့် စီမံပါ
               </h1>
-              <p className="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed">
-                Product Link များဖန်တီးပါ၊ Mobile Banking ဖြင့် ငွေပေးချေမှုများကို လက်ခံပါ၊ အော်ဒါများကို တစ်နေရာတည်းတွင် စနစ်တကျ စီမံခန့်ခွဲပါ။
+              <p className="text-lg text-gray-500 mb-12 leading-relaxed max-w-xl font-medium">
+                ZayLink သည် မြန်မာအွန်လိုင်းရောင်းချသူများအတွက် Product Link များဖန်တီးခြင်း၊ ငွေပေးချေမှုစစ်ဆေးခြင်းနှင့် အော်ဒါစီမံခြင်းတို့ကို တစ်နေရာတည်းတွင် Pro ဆန်ဆန် လုပ်ဆောင်နိုင်မည့် စနစ်ဖြစ်ပါသည်။
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <a
                   href="/register"
-                  className="w-full sm:w-auto bg-[#1a7f8c] text-white px-10 py-4 rounded-xl text-xl font-bold hover:bg-[#156a75] transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-brand-dark text-white px-12 py-5 rounded-2xl text-lg font-black hover:bg-brand-primary hover:text-brand-dark transition-all shadow-2xl shadow-brand-dark/20 flex items-center justify-center gap-3 group"
                 >
-                  အခမဲ့ စတင်အသုံးပြုမည် <ArrowRight className="w-6 h-6" />
+                  အခမဲ့စတင်မည် <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
-                <div className="flex items-center gap-2 text-gray-500 font-medium">
-                  <CheckCircle className="w-5 h-5 text-green-500" /> Credit Card မလိုပါ
+                <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white border border-gray-100 shadow-sm">
+                  <div className="flex -space-x-2">
+                    {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-brand-primary/20"></div>)}
+                  </div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">၅၀၀+ Sellers Trusted</p>
                 </div>
               </div>
             </div>
+
             <div className="lg:w-1/2 relative">
-              <div className="bg-white p-4 rounded-3xl shadow-2xl border border-gray-100">
-                <img src="/logo.png" alt="OrderPote App" className="w-full h-auto rounded-2xl opacity-10 grayscale py-20" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center w-full">
-                   <p className="text-[#1a7f8c] font-bold text-xl">OrderPote Dashboard</p>
-                   <p className="text-gray-400">အော်ဒါစီမံခန့်ခွဲမှုစနစ်</p>
+              <div className="relative z-10 p-4 bg-white rounded-[3rem] shadow-3xl shadow-brand-dark/10 border border-gray-100">
+                <div className="bg-brand-dark rounded-[2.5rem] p-8 overflow-hidden relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                  <div className="relative z-10 flex justify-between items-start mb-20">
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
+                      <LayoutDashboard className="w-6 h-6 text-brand-primary" />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Weekly Sales</p>
+                      <p className="text-2xl font-black text-white">+၁,၂၅၀,၀၀၀</p>
+                    </div>
+                  </div>
+                  <div className="relative z-10 space-y-4">
+                    {[1,2].map(i => (
+                      <div key={i} className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-brand-primary/20 flex items-center justify-center text-brand-primary">
+                            <ShoppingBag className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-white">Order #OP-998{i}</p>
+                            <p className="text-[8px] font-bold text-white/40">Success</p>
+                          </div>
+                        </div>
+                        <p className="text-xs font-black text-brand-primary">၂၅,၀၀၀ ကျပ်</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-              {/* Floating Status Cards */}
-              <div className="absolute -top-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-50 animate-bounce-slow">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                    <ShoppingBag className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-bold">အော်ဒါအသစ်ရရှိသည်</p>
-                    <p className="text-sm font-black">၄၅,၀၀၀ ကျပ်</p>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-xl border border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                    <Shield className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-bold">ငွေလွှဲမှု စစ်ဆေးပြီး</p>
-                    <p className="text-sm font-black text-blue-600">KBZ Pay - အောင်မြင်သည်</p>
-                  </div>
-                </div>
-              </div>
+              {/* Decorative elements */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-brand-primary/20 rounded-full blur-3xl -z-10"></div>
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-brand-primary/20 rounded-full blur-3xl -z-10"></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-12 bg-white border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <p className="text-3xl md:text-4xl font-black text-[#1a7f8c]">၅၀၀+</p>
-              <p className="text-gray-500 font-bold">ရောင်းချသူများ</p>
+      {/* Features Grid */}
+      <section id="features" className="py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-20">
+            <div className="max-w-2xl">
+              <h2 className="text-sm font-black text-brand-primary uppercase tracking-[0.3em] mb-6">Capabilities</h2>
+              <h3 className="text-4xl md:text-5xl font-black text-brand-dark tracking-tighter leading-tight">
+                လုပ်ငန်းတိုးတက်ဖို့ လိုအပ်တဲ့ <br/> နည်းပညာများအားလုံး
+              </h3>
             </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-black text-[#1a7f8c]">၁၀,၀၀၀+</p>
-              <p className="text-gray-500 font-bold">အော်ဒါများ</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-black text-[#1a7f8c]">၂၄/၇</p>
-              <p className="text-gray-500 font-bold">ဝန်ဆောင်မှု</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-black text-[#1a7f8c]">၁၀၀%</p>
-              <p className="text-gray-500 font-bold">စိတ်ချရမှု</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">လုပ်ငန်းတိုးတက်ဖို့ လိုအပ်သမျှ အားလုံး</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto font-medium">မြန်မာရောင်းချသူများအတွက် အထူးထုတ်လုပ်ထားသော လုပ်ဆောင်ချက်များ</p>
+            <p className="text-gray-500 font-medium max-w-xs">
+              ZayLink သည် သင့်လုပ်ငန်းကို အချိန်တိုအတွင်း Professional ဆန်သွားစေမည့် Tools များစွာ ပါဝင်ပါသည်။
+            </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard 
-              icon={<Share2 className="w-8 h-8" />}
-              title="Product Link များ"
-              description="မိမိပစ္စည်းအတွက် သီးသန့် Link ဖန်တီးပြီး Facebook, Messenger တို့တွင် တိုက်ရိုက်မျှဝေနိုင်ပါသည်။"
-              color="bg-blue-50 text-blue-600"
+              icon={<Globe className="w-7 h-7" />}
+              title="Professional Link"
+              description="သင့်ပစ္စည်းများကို Facebook ပေါ်တွင် Professional ဆန်ဆန် မျှဝေနိုင်မည့် Link များ ရရှိပါမည်။"
             />
             <FeatureCard 
-              icon={<MousePointer2 className="w-8 h-8" />}
-              title="လွယ်ကူသော Checkout"
-              description="ဝယ်ယူသူများအတွက် ဖုန်းဖြင့် အလွယ်တကူ အော်ဒါတင်နိုင်မည့် စနစ်ဖြစ်ပါသည်။"
-              color="bg-orange-50 text-orange-600"
+              icon={<ShieldCheck className="w-7 h-7" />}
+              title="Payment Check"
+              description="KBZ Pay, Wave Pay Screenshot များကို Dashboard တစ်ခုတည်းတွင် အလွယ်တကူ စစ်ဆေးနိုင်ပါသည်။"
             />
             <FeatureCard 
-              icon={<CreditCard className="w-8 h-8" />}
-              title="ငွေလွှဲမှု စစ်ဆေးခြင်း"
-              description="KBZ Pay, Wave Pay Screenshot များကို စနစ်တကျ စစ်ဆေးနိုင်မည့် လုပ်ဆောင်ချက် ပါဝင်ပါသည်။"
-              color="bg-green-50 text-green-600"
+              icon={<Smartphone className="w-7 h-7" />}
+              title="Mobile First"
+              description="ဖုန်းတစ်လုံးရှိရုံဖြင့် ဘယ်နေရာကမဆို အော်ဒါများကို အမြန်ဆုံး စီမံခန့်ခွဲနိုင်ပါသည်။"
             />
-            <FeatureCard 
-              icon={<Clock className="w-8 h-8" />}
-              title="Live အော်ဒါ အခြေအနေ"
-              description="ပစ္စည်းပို့လိုက်ပြီလား၊ ငွေလွှဲပြီးပြီလား ဆိုတာကို ဝယ်သူက Live ကြည့်ရှုနိုင်ပါသည်။"
-              color="bg-purple-50 text-purple-600"
-            />
-            <FeatureCard 
-              icon={<Smartphone className="w-8 h-8" />}
-              title="ဖုန်းဖြင့် စီမံခန့်ခွဲနိုင်မှု"
-              description="ဘယ်နေရာရောက်ရောက် ဖုန်းတစ်လုံးရှိရုံဖြင့် လုပ်ငန်းတစ်ခုလုံးကို စီမံနိုင်ပါသည်။"
-              color="bg-pink-50 text-pink-600"
-            />
-            <FeatureCard 
-              icon={<BarChart className="w-8 h-8" />}
-              title="အရောင်းစာရင်းများ"
-              description="နေ့စဉ်၊ လစဉ် အရောင်းစာရင်းများကို ဇယားများဖြင့် အသေးစိတ် ကြည့်ရှုနိုင်ပါသည်။"
-              color="bg-red-50 text-red-600"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works - The Flow */}
-      <section id="how-it-works" className="py-24 bg-[#f8fbfc]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">အသုံးပြုပုံ အဆင့်ဆင့်</h2>
-            <p className="text-gray-600 font-medium">မိနစ်ပိုင်းအတွင်း စတင်ရောင်းချနိုင်ပါသည်</p>
-          </div>
-
-          <div className="flex flex-col lg:flex-row items-center gap-16">
-            <div className="lg:w-1/2 space-y-10">
-              <StepItem 
-                number="၁"
-                title="ပစ္စည်းတင်ပြီး Link ယူပါ"
-                description="ရောင်းချမည့် ပစ္စည်းအချက်အလက်များကို ဖြည့်သွင်းပြီး Product Link ကို ရယူပါ။"
-              />
-              <StepItem 
-                number="၂"
-                title="ဝယ်သူက အော်ဒါတင်ပါမည်"
-                description="ဝယ်သူက Link မှတစ်ဆင့် အချက်အလက်များဖြည့်ပြီး ငွေလွှဲ Screenshot တင်ပါမည်။"
-              />
-              <StepItem 
-                number="၃"
-                title="စစ်ဆေးပြီး ပစ္စည်းပို့ပါ"
-                description="Dashboard မှတစ်ဆင့် ငွေလွှဲမှုကို စစ်ဆေးပြီး ပစ္စည်းပို့ဆောင်ပေးလိုက်ရုံပါပဲ။"
-              />
-            </div>
-            <div className="lg:w-1/2">
-               <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-                  <div className="bg-[#1a7f8c] p-5 text-white flex justify-between items-center">
-                    <span className="font-bold text-lg">အော်ဒါအသေးစိတ် #OP-9982</span>
-                    <span className="bg-yellow-400 text-yellow-900 text-xs font-black px-3 py-1 rounded-full uppercase">စစ်ဆေးရန်</span>
-                  </div>
-                  <div className="p-8 space-y-6">
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-4">
-                      <span className="text-gray-500 font-bold">ဝယ်သူအမည်</span>
-                      <span className="font-black text-gray-900">မသန္တာ</span>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-4">
-                      <span className="text-gray-500 font-bold">မှာယူသည့်ပစ္စည်း</span>
-                      <span className="font-black text-gray-900">Premium Cotton Tee (M) x 2</span>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 mb-3 uppercase font-black tracking-wider">ငွေလွှဲဖြတ်ပိုင်း (Screenshot)</p>
-                      <div className="w-full h-48 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 italic font-medium">
-                        [KBZ Pay Screenshot Preview]
-                      </div>
-                    </div>
-                    <div className="flex gap-3 pt-4">
-                      <button className="flex-1 py-3.5 border-2 border-red-100 text-red-600 rounded-xl font-black hover:bg-red-50 transition-colors">ပယ်ဖျက်မည်</button>
-                      <button className="flex-[2] py-3.5 bg-green-600 text-white rounded-xl font-black hover:bg-green-700 shadow-lg shadow-green-200 transition-all">ငွေလက်ခံရရှိပြီး ပစ္စည်းပို့မည်</button>
-                    </div>
-                  </div>
-               </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-[#1a7f8c] rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#f9a825]/20 rounded-full -ml-48 -mb-48 blur-3xl"></div>
-            
-            <h2 className="text-3xl md:text-5xl font-black mb-8 relative z-10 leading-tight">သင့်လုပ်ငန်းကို ဒီနေ့ပဲ <br/> အဆင့်မြှင့်တင်လိုက်ပါ</h2>
-            <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto relative z-10 font-medium">
-              OrderPote ကို အသုံးပြုပြီး ရောင်းအားတွေကို စနစ်တကျနဲ့ ပိုမိုတိုးတက်အောင် လုပ်ဆောင်လိုက်ပါ။
+      <section className="py-20 px-6">
+        <div className="max-w-7xl mx-auto bg-brand-dark rounded-[3.5rem] p-12 md:p-24 relative overflow-hidden text-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(132,204,22,0.15)_0%,transparent_70%)]"></div>
+          <div className="relative z-10">
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tighter">သင့်လုပ်ငန်းကို ဒီနေ့ပဲ စတင်လိုက်ပါ</h2>
+            <p className="text-lg text-white/60 mb-12 max-w-xl mx-auto font-medium">
+              ZayLink PRO Edition ဖြင့် အရောင်းအဝယ်တွေကို စနစ်တကျနဲ့ ပိုမိုတိုးတက်အောင် လုပ်ဆောင်လိုက်ပါ။
             </p>
-            <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <a
                 href="/register"
-                className="inline-block bg-white text-[#1a7f8c] px-12 py-5 rounded-2xl text-2xl font-black hover:bg-gray-50 transition-all shadow-xl hover:scale-105 transform"
+                className="w-full sm:w-auto bg-brand-primary text-brand-dark px-16 py-6 rounded-2xl text-xl font-black hover:bg-white transition-all shadow-2xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transform"
               >
-                အခမဲ့ စတင်အသုံးပြုမည်
+                အခမဲ့အကောင့်ဖွင့်မည်
               </a>
-              <p className="mt-6 text-sm text-white/70 font-bold">မှတ်ပုံတင်ရန် ၂ မိနစ်သာ ကြာမြင့်ပါမည်။</p>
+              <a href="/login" className="text-white font-black uppercase tracking-widest text-xs hover:text-brand-primary transition-colors flex items-center gap-2">
+                Login to account <ChevronRight className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-10">
-            <div className="flex flex-col items-center md:items-start gap-4">
-              <img src="/logo.png" alt="OrderPote Logo" className="h-20 w-auto" />
-              <p className="text-gray-500 font-medium max-w-xs text-center md:text-left">မြန်မာရောင်းချသူများအတွက် အကောင်းဆုံး အော်ဒါစီမံခန့်ခွဲမှုစနစ်</p>
+      <footer className="py-20 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-12">
+            <div className="flex items-center gap-2">
+              <img src="/real-logo.png" alt="ZayLink Logo" className="h-8 w-auto" />
+              <h1 className="text-xl font-black text-brand-dark tracking-tighter">Zay<span className="text-brand-primary">Link</span></h1>
             </div>
-            <div className="flex flex-wrap justify-center gap-8 text-base font-bold text-gray-600">
-              <a href="#" className="hover:text-[#1a7f8c]">ကိုယ်ရေးအချက်အလက် မူဝါဒ</a>
-              <a href="#" className="hover:text-[#1a7f8c]">စည်းကမ်းသတ်မှတ်ချက်များ</a>
-              <a href="#" className="hover:text-[#1a7f8c]">ဆက်သွယ်ရန်</a>
+            <div className="flex flex-wrap justify-center gap-10 text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
+              <a href="#" className="hover:text-brand-primary transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-brand-primary transition-colors">Terms of Use</a>
+              <a href="#" className="hover:text-brand-primary transition-colors">Contact Support</a>
             </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-gray-50 text-center text-gray-400 font-medium">
-            <p>&copy; ၂၀၂၆ OrderPote. All rights reserved.</p>
+            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">&copy; ၂၀၂၆ ZayLink. PRO VERSION.</p>
           </div>
         </div>
       </footer>
@@ -272,30 +184,16 @@ export default function LandingPage() {
   );
 }
 
-function FeatureCard({ icon, title, description, color }: { icon: React.ReactNode, title: string, description: string, color: string }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      <div className={`w-16 h-16 ${color} rounded-2xl flex items-center justify-center mb-6 shadow-inner`}>
+    <div className="p-10 rounded-[2.5rem] bg-gray-50 border border-gray-100 hover:border-brand-primary transition-all duration-500 group">
+      <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:bg-brand-primary group-hover:text-brand-dark transition-all duration-500">
         {icon}
       </div>
-      <h3 className="text-2xl font-black mb-4 text-gray-900">{title}</h3>
-      <p className="text-gray-600 leading-relaxed font-medium">
+      <h3 className="text-2xl font-black mb-4 text-brand-dark tracking-tight">{title}</h3>
+      <p className="text-gray-500 leading-relaxed font-medium text-sm">
         {description}
       </p>
-    </div>
-  );
-}
-
-function StepItem({ number, title, description }: { number: string, title: string, description: string }) {
-  return (
-    <div className="flex gap-6 group">
-      <div className="flex-shrink-0 w-14 h-14 rounded-2xl bg-[#1a7f8c] text-white flex items-center justify-center text-2xl font-black shadow-lg shadow-[#1a7f8c]/20 group-hover:scale-110 transition-transform">
-        {number}
-      </div>
-      <div>
-        <h4 className="text-2xl font-black mb-2 text-gray-900">{title}</h4>
-        <p className="text-gray-600 font-medium leading-relaxed">{description}</p>
-      </div>
     </div>
   );
 }

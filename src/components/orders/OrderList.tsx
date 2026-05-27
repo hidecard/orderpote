@@ -3,6 +3,7 @@ import { CheckCircle, Download, Image as ImageIcon, Search, Truck } from 'lucide
 import type { Order } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
 import { getOrdersBySellerId, updateOrderDeliveryStatus, updateOrderPaymentStatus } from '../../lib/db';
+import { OrderListSkeleton } from '../ui/Skeleton';
 
 type PaymentFilter = 'all' | 'pending' | 'paid' | 'failed';
 type DeliveryFilter = 'all' | 'pending' | 'preparing' | 'shipped' | 'delivered';
@@ -109,11 +110,7 @@ export default function OrderList() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-6 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a7f8c]"></div>
-      </div>
-    );
+    return <OrderListSkeleton />;
   }
 
   return (
