@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     }
 
     // Replace default meta tags with product-specific ones
-    html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+    html = html.replace(/<title>.*?<\/title>/, `<title>${escapeHtml(title)}</title>`);
     
     const metaTags = [
       { property: 'og:title', content: title },
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       const attr = tag.property ? 'property' : 'name';
       const key = tag.property || tag.name;
       const regex = new RegExp(`<meta ${attr}="${key}" content=".*?" \/?>`, 'i');
-      const newTag = `<meta ${attr}="${key}" content="${tag.content}" />`;
+      const newTag = `<meta ${attr}="${key}" content="${escapeHtml(tag.content)}" />`;
       
       if (html.match(regex)) {
         html = html.replace(regex, newTag);
@@ -88,6 +88,17 @@ export default async function handler(req, res) {
     console.error('OG Error:', error);
     return serveIndex(res);
   }
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function serveIndex(res) {
