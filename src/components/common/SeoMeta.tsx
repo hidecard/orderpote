@@ -65,7 +65,7 @@ export default function SeoMeta({
     const absoluteUrl = pageUrl ? getAbsoluteUrl(pageUrl) : '';
     const absoluteImage = getAbsoluteUrl(image);
 
-    console.log('SEO Meta:', { title, description, image, absoluteImage, absoluteUrl, type });
+    console.log('SEO Meta အချက်အလက်:', { title, description, image, absoluteImage, absoluteUrl, type });
 
     document.title = title;
 

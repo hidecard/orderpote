@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       if (fs.existsSync(rootIndexPath)) {
         var html = fs.readFileSync(rootIndexPath, 'utf8');
       } else {
-        return res.status(500).send('Template not found');
+        return res.status(500).send('Template မတွေ့ရှိပါ');
       }
     } else {
       var html = fs.readFileSync(indexPath, 'utf8');
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       }
     });
 
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.status(200).send(html);
   } catch (error) {
     console.error('OG Error:', error);
@@ -94,8 +94,8 @@ function serveIndex(res) {
   const indexPath = path.join(process.cwd(), 'dist', 'index.html');
   if (fs.existsSync(indexPath)) {
     const html = fs.readFileSync(indexPath, 'utf8');
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.status(200).send(html);
   }
-  return res.status(404).send('Not Found');
+  return res.status(404).send('မတွေ့ရှိပါ');
 }
