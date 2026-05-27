@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star, ShoppingCart, Share2 } from 'lucide-react';
 import SeoMeta from '../common/SeoMeta';
+import ProductLoadingSkeleton from './ProductLoadingSkeleton';
 import type { Product, ProductVariant, Review, Store } from '../../lib/schema';
 import { getProductBySlug, getProductImages, getProductVariants, getProductReviews, trackPageView, getStoreByUserId } from '../../lib/db';
 
@@ -196,9 +197,7 @@ export default function ProductLandingPage({ slug }: ProductLandingPageProps) {
           title="ပစ္စည်းဖွင့်နေသည် | OrderPote"
           description="OrderPote ပစ္စည်းစာမျက်နှာကို ဖွင့်နေသည်။"
         />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-        </div>
+        <ProductLoadingSkeleton />
       </>
     );
   }
