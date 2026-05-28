@@ -2,7 +2,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../lib/schema';
-import { getUserByEmail, createUser, updateUserSellerStatus, getStoreByUserId, getDevicesByStoreId, createDevice, updateDevice, recordDeviceUsage, getStaffByUserId } from '../lib/db';
+import { getUserByEmail, createUser, updateUserSellerStatus, getStoreByUserId, getDevicesByStoreId, createDevice, updateDevice, recordDeviceUsage } from '../lib/db';
 
 interface AuthContextType {
   user: User | null;
@@ -63,30 +63,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       localStorage.setItem('orderpote_user', JSON.stringify(user));
       
-      // Track device usage for sellers and staff
+      // Track device usage for sellers
       try {
         const store = await getStoreByUserId(user.id);
-        const staff = await getStaffByUserId(user.id);
         
-        if (store || staff) {
-          const targetStore = store || (staff ? await getStoreByUserId(staff.store_id) : null);
-          if (!targetStore) {
-            // Still allow login; store/device tracking is best-effort
-            return user;
-          }
-          
+        if (store) {
           const deviceIdentifier = getDeviceIdentifier();
           const deviceType = getDeviceType();
           const deviceName = getDeviceName();
           
           // Check if device exists
-          const devices = await getDevicesByStoreId(targetStore.id);
+          const devices = await getDevicesByStoreId(store.id);
           let device = devices.find(d => d.device_identifier === deviceIdentifier);
           
           if (!device) {
             // Create new device
             device = await createDevice({
-              store_id: targetStore.id,
+              store_id: store.id,
               device_name: deviceName,
               device_type: deviceType,
               device_identifier: deviceIdentifier,
@@ -101,14 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
           }
           
-          // Determine account type
-          const accountType = staff ? 'staff' : 'seller';
-          
           // Record device usage with account type
           await recordDeviceUsage({
             device_id: device.id,
             user_id: user.id,
-            account_type: accountType,
+            account_type: 'seller',
             login_time: new Date().toISOString(),
             user_agent: navigator.userAgent,
           });

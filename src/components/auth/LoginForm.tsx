@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getStoreByUserId, getStaffByUserId, getStoreById } from '../../lib/db';
+import { getStoreByUserId } from '../../lib/db';
 import { isAdminUser } from '../../lib/admin';
 
 export default function LoginForm() {
@@ -23,14 +23,7 @@ export default function LoginForm() {
         return;
       }
 
-      // Check if user is staff
-      const staff = await getStaffByUserId(user.id);
-      let store = await getStoreByUserId(user.id);
-
-      // If user is staff, get the store from staff record
-      if (staff && !store) {
-        store = await getStoreById(staff.store_id);
-      }
+      const store = await getStoreByUserId(user.id);
 
       if (!user.is_seller || !store) {
         window.location.href = '/become-seller';

@@ -123,7 +123,7 @@ export default function DeviceManagement() {
         {deviceList.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <Smartphone className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p>No devices registered yet. Devices will be automatically tracked when you or your staff log in.</p>
+            <p>No devices registered yet. Devices will be automatically tracked when you log in.</p>
           </div>
         ) : (
           <table className="w-full">
@@ -197,7 +197,7 @@ export default function DeviceManagement() {
                                       <div>
                                         <div className="flex items-center gap-2">
                                           <p className="text-sm font-medium text-gray-900">User ID: {usage.user_id}</p>
-                                          <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${usage.account_type === 'seller' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                          <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-700">
                                             {usage.account_type.charAt(0).toUpperCase() + usage.account_type.slice(1)}
                                           </span>
                                         </div>
