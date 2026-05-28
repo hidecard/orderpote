@@ -131,6 +131,7 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
             <div>
               <p className="text-sm text-gray-600">Total Price</p>
               <p className="font-semibold text-2xl">{order.total_price.toLocaleString()} Ks</p>
+              <p className="text-sm text-gray-500">Delivery Fee: {(order.delivery_fee || 0).toLocaleString()} Ks</p>
             </div>
           </div>
         </div>
@@ -141,8 +142,11 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
             <span className={`inline-block px-4 py-2 rounded-full font-semibold mb-4 ${getStatusColor(order.payment_status)}`}>
               {order.payment_status.toUpperCase()}
             </span>
+            <p className="mb-4 text-sm font-semibold text-gray-700">
+              Method: {order.payment_method === 'cod' ? 'COD' : 'Prepaid'}
+            </p>
 
-            {order.payment_screenshot_url && (
+            {order.payment_screenshot_url ? (
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">Payment Screenshot</p>
                 <button
@@ -159,6 +163,12 @@ export default function OrderDetail({ orderId, onBack }: OrderDetailProps) {
                     <ImageIcon className="w-4 h-4" />
                   </span>
                 </button>
+              </div>
+            ) : (
+              <div className="mb-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+                {order.payment_method === 'cod'
+                  ? 'Cash on Delivery order. No payment screenshot required.'
+                  : 'No payment screenshot uploaded.'}
               </div>
             )}
 

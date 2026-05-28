@@ -15,6 +15,8 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 - Product landing pages for buyers at `/order/:slug`
 - Product traffic analytics for seller product views
 - Coupon and discount code management
+- Cash on Delivery (COD) setting so buyers can checkout without a payment screenshot
+- Township-based delivery fees that are automatically added during checkout
 - Order list, order detail, payment status, delivery status, delivery service, and tracking ID management
 - Notifications for seller activity
 - Device management and login history for seller accounts
@@ -25,6 +27,8 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 - Public product page without account login
 - Variant and quantity selection
 - Checkout with customer name, phone, address, region, township, and payment screenshot
+- COD checkout when the seller enables Cash on Delivery
+- Automatic delivery fee calculation after selecting region and township
 - Order tracking page
 - My Orders lookup by customer phone
 - Digital receipt view and PDF receipt download
@@ -149,15 +153,18 @@ npm run preview
 7. Share the generated product link, usually `/order/:slug`.
 8. Manage incoming orders in `/orders`.
 9. Use `/discounts` for coupon codes and `/product-traffic` for view analytics.
+10. Enable COD and edit township delivery fees in `/store-settings`.
 
 ### Buyer Flow
 
 1. Open a product link at `/order/:slug`.
 2. Choose variant and quantity.
 3. Continue to checkout.
-4. Upload payment screenshot and submit the order.
-5. Track the order at `/order-tracking/:orderId`.
-6. Use `/my-orders` to find orders by phone number.
+4. Select prepaid payment or COD if the seller allows it.
+5. Choose region and township so the delivery fee is added automatically.
+6. Upload payment screenshot for prepaid orders, then submit the order. COD orders do not require a screenshot.
+7. Track the order at `/order-tracking/:orderId`.
+8. Use `/my-orders` to find orders by phone number.
 
 ### Admin Flow
 
@@ -253,4 +260,3 @@ This project is Vite-based and includes Vercel configuration. For Vercel deploym
 ## License
 
 MIT
-

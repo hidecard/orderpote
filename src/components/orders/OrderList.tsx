@@ -81,11 +81,13 @@ export default function OrderList() {
         order.customer_name,
         order.customer_phone,
         order.total_price,
+        order.delivery_fee || 0,
+        order.payment_method || 'prepaid',
         order.payment_status,
         order.delivery_status,
         order.created_at,
       ]);
-    const csv = [['Order ID', 'Customer', 'Phone', 'Total', 'Payment', 'Delivery', 'Created At'], ...rows]
+    const csv = [['Order ID', 'Customer', 'Phone', 'Total', 'Delivery Fee', 'Payment Method', 'Payment', 'Delivery', 'Created At'], ...rows]
       .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
       .join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -218,6 +220,9 @@ export default function OrderList() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.payment_status)}`}>
                       {order.payment_status}
                     </span>
+                    <div className="mt-1 text-xs font-semibold text-gray-500">
+                      {order.payment_method === 'cod' ? 'COD' : 'Prepaid'}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.delivery_status)}`}>
@@ -234,6 +239,11 @@ export default function OrderList() {
                         >
                           <ImageIcon className="w-4 h-4" />
                         </button>
+                      )}
+                      {order.payment_method === 'cod' && (
+                        <span className="rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+                          COD
+                        </span>
                       )}
                       {order.payment_status === 'pending' && (
                         <button

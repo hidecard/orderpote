@@ -3,7 +3,13 @@ import type { FormEvent } from 'react';
 import { Store, Save, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getStoreByUserId, updateStore, getProductsByUserId, updateProduct } from '../../lib/db';
+import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
+import { createDefaultDeliveryFees, getDeliveryFeeKey, parseDeliveryFees } from '../../lib/delivery-fees';
 import type { Store as StoreType, Product } from '../../lib/schema';
+
+function isEnabledFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === '1';
+}
 
 export default function StoreSettings() {
   const { user } = useAuth();
@@ -15,6 +21,9 @@ export default function StoreSettings() {
   const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [codEnabled, setCodEnabled] = useState(false);
+  const [deliveryFees, setDeliveryFees] = useState(createDefaultDeliveryFees);
+  const [selectedDeliveryRegion, setSelectedDeliveryRegion] = useState('yangon');
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
@@ -40,12 +49,14 @@ export default function StoreSettings() {
           setAddress(storeData.address);
           setDescription(storeData.description);
           setLogoUrl(storeData.logo_url || '');
+          setCodEnabled(isEnabledFlag(storeData.cod_enabled));
+          setDeliveryFees(parseDeliveryFees(storeData.delivery_fees_json));
         }
           const prods = await getProductsByUserId(user.id);
           setProducts(prods);
           const map: Record<string, number> = {};
           prods.forEach((p) => {
-            map[p.id] = (p as any).low_stock_threshold ?? 5;
+            map[p.id] = p.low_stock_threshold ?? 5;
           });
           setThresholds(map);
       } catch (error) {
@@ -84,6 +95,8 @@ export default function StoreSettings() {
         category,
         address,
         description,
+        cod_enabled: codEnabled,
+        delivery_fees_json: JSON.stringify(deliveryFees),
       });
 
       setSuccess('Store settings updated successfully!');
@@ -92,6 +105,8 @@ export default function StoreSettings() {
       const updatedStore = await getStoreByUserId(user.id);
       if (updatedStore) {
         setStore(updatedStore);
+        setCodEnabled(isEnabledFlag(updatedStore.cod_enabled));
+        setDeliveryFees(parseDeliveryFees(updatedStore.delivery_fees_json));
       }
     } catch (error) {
       console.error('Error updating store:', error);
@@ -269,6 +284,77 @@ export default function StoreSettings() {
               />
             </div>
 
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Cash on Delivery (COD)</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    ဖွင့်ထားပါက Buyer သည် Screenshot မတင်ဘဲ ပစ္စည်းလက်ခံချိန် ငွေချေစနစ်ဖြင့် Checkout ပြုလုပ်နိုင်ပါသည်။
+                  </p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    checked={codEnabled}
+                    onChange={(e) => setCodEnabled(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <span className="h-7 w-12 rounded-full bg-gray-300 transition-colors peer-checked:bg-[#1a7f8c]"></span>
+                  <span className="absolute left-1 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></span>
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">မြို့နယ်အလိုက် Delivery ခ</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Checkout တွင် Buyer က မြို့နယ်ရွေးလိုက်သည်နှင့် Delivery ခကို အော်တိုပေါင်းပေးပါမည်။
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">တိုင်းဒေသကြီး / ပြည်နယ်</label>
+                <select
+                  value={selectedDeliveryRegion}
+                  onChange={(e) => setSelectedDeliveryRegion(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1a7f8c] focus:border-transparent"
+                >
+                  {MYANMAR_REGIONS.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                {(TOWNSHIPS_BY_REGION[selectedDeliveryRegion] || []).map((township) => {
+                  const key = getDeliveryFeeKey(selectedDeliveryRegion, township);
+                  return (
+                    <div key={key} className="flex items-center justify-between gap-3 rounded-lg bg-white px-4 py-3">
+                      <span className="text-sm font-medium text-gray-800">{township}</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={deliveryFees[key] ?? 0}
+                          onChange={(e) => {
+                            setDeliveryFees({
+                              ...deliveryFees,
+                              [key]: Math.max(0, Number(e.target.value)),
+                            });
+                          }}
+                          className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-right"
+                        />
+                        <span className="text-sm text-gray-500">Ks</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="pt-4">
               <button
                 type="submit"
@@ -302,10 +388,11 @@ export default function StoreSettings() {
                     />
                     <button
                       onClick={async () => {
+                        if (!user) return;
                         try {
                           await updateProduct(p.id, { low_stock_threshold: thresholds[p.id] });
                           // refresh products
-                          const refreshed = await getProductsByUserId((user as any).id);
+                          const refreshed = await getProductsByUserId(user.id);
                           setProducts(refreshed);
                         } catch (err) {
                           console.error('Failed to update threshold', err);

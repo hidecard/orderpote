@@ -221,6 +221,10 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
               <span className="font-semibold">{order.quantity}</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-gray-600">Delivery Fee</span>
+              <span className="font-semibold">{(order.delivery_fee || 0).toLocaleString()} Ks</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-600">Total Price</span>
               <span className="font-bold text-purple-600">{order.total_price.toLocaleString()} Ks</span>
             </div>
@@ -288,6 +292,9 @@ export default function OrderTracking({ orderId }: OrderTrackingProps) {
               }`}
             ></div>
             <span className="font-semibold capitalize">{order.payment_status}</span>
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+              {order.payment_method === 'cod' ? 'COD' : 'Prepaid'}
+            </span>
           </div>
         </div>
 

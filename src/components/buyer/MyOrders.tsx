@@ -128,6 +128,10 @@ export default function MyOrders() {
                       <span className="text-gray-600">Total</span>
                       <span className="font-bold text-purple-600">{order.total_price.toLocaleString()} Ks</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Payment</span>
+                      <span className="font-semibold">{order.payment_method === 'cod' ? 'COD' : 'Prepaid'}</span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Status</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.delivery_status)}`}>

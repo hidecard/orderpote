@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Copy, Upload, X, CheckCircle } from 'lucide-react';
+import { Banknote, Copy, CreditCard, Upload, X, CheckCircle } from 'lucide-react';
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
+import { getDeliveryFeeForTownship, parseDeliveryFees } from '../../lib/delivery-fees';
 import type { Product, ProductVariant, Wallet, Store } from '../../lib/schema';
 import { getProductBySlug, getProductVariants, getPrimaryWallet, getStoreByUserId, createOrder, validateCouponCode } from '../../lib/db';
 
@@ -9,6 +10,10 @@ interface CheckoutFormProps {
   productSlug: string;
   variantId: string;
   quantity: number;
+}
+
+function isEnabledFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === '1';
 }
 
 export default function CheckoutForm({ productSlug, variantId, quantity }: CheckoutFormProps) {
@@ -21,6 +26,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   const [customerRegion, setCustomerRegion] = useState('');
   const [customerTownship, setCustomerTownship] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'prepaid' | 'cod'>('prepaid');
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string>('');
   const [couponCode, setCouponCode] = useState('');
@@ -47,6 +53,9 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         setVariant(variantData || null);
         setPrimaryWallet(walletData);
         setStore(storeData);
+        if (!walletData && isEnabledFlag(storeData?.cod_enabled)) {
+          setPaymentMethod('cod');
+        }
       } catch (error) {
         console.error('Error fetching checkout data:', error);
       } finally {
@@ -153,13 +162,18 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
       return;
     }
 
-    if (!primaryWallet) {
+    if (paymentMethod === 'prepaid' && !primaryWallet) {
       alert('Seller has not set up a payment wallet yet');
       return;
     }
 
-    if (!customerName || !customerPhone || !customerRegion || !customerTownship || !customerAddress || !paymentScreenshot) {
-      alert('Please fill in all fields and upload payment screenshot');
+    if (!customerName || !customerPhone || !customerRegion || !customerTownship || !customerAddress) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (paymentMethod === 'prepaid' && !paymentScreenshot) {
+      alert('Please upload payment screenshot');
       return;
     }
 
@@ -167,6 +181,12 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
 
     try {
       const baseTotal = variant ? variant.price * quantity : 0;
+      const itemTotal = Math.max(0, baseTotal - discountAmount);
+      const deliveryFee = getDeliveryFeeForTownship(
+        parseDeliveryFees(store?.delivery_fees_json),
+        customerRegion,
+        customerTownship
+      );
       const order = await createOrder({
         product_id: product.id,
         variant_id: variant.id,
@@ -176,12 +196,14 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         customer_region: customerRegion,
         customer_township: customerTownship,
         quantity,
-        total_price: baseTotal - discountAmount,
+        total_price: itemTotal + deliveryFee,
+        delivery_fee: deliveryFee,
+        payment_method: paymentMethod,
         coupon_code: appliedCoupon?.code,
         discount_amount: discountAmount,
         payment_status: 'pending',
         delivery_status: 'pending',
-        payment_screenshot_url: screenshotPreview,
+        payment_screenshot_url: paymentMethod === 'prepaid' ? screenshotPreview : undefined,
       });
 
       // Save phone to localStorage for MyOrders page
@@ -208,7 +230,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   };
 
   const totalPrice = variant ? variant.price * quantity : 0;
-  const finalPrice = Math.max(0, totalPrice - discountAmount);
+  const itemTotal = Math.max(0, totalPrice - discountAmount);
 
   if (isLoading) {
     return (
@@ -229,7 +251,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     );
   }
 
-  if (!primaryWallet) {
+  if (!primaryWallet && !isEnabledFlag(store?.cod_enabled)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-md p-6 max-w-md text-center">
@@ -241,6 +263,9 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
   }
 
   const availableTownships = customerRegion ? TOWNSHIPS_BY_REGION[customerRegion] || [] : [];
+  const deliveryFee = getDeliveryFeeForTownship(parseDeliveryFees(store?.delivery_fees_json), customerRegion, customerTownship);
+  const finalPrice = itemTotal + deliveryFee;
+  const canUseCod = isEnabledFlag(store?.cod_enabled);
 
   return (
     <div className="min-h-screen bg-[#f8fbfc] py-8 px-4">
@@ -283,23 +308,76 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
                 </div>
                 <div className="mt-6 rounded-3xl bg-[#eaf8fb] p-4 border border-[#d4f1f5]">
                   <p className="text-sm text-gray-600">စုစုပေါင်း</p>
-                  {discountAmount > 0 ? (
-                    <div className="mt-2 flex items-end gap-3">
-                      <p className="text-xl text-gray-500 line-through">{totalPrice.toLocaleString()} Ks</p>
-                      <p className="text-3xl font-black text-[#1a7f8c]">{finalPrice.toLocaleString()} Ks</p>
+                  <div className="mt-3 space-y-2 text-sm text-gray-700">
+                    <div className="flex justify-between">
+                      <span>ပစ္စည်းတန်ဖိုး</span>
+                      <span>{totalPrice.toLocaleString()} Ks</span>
                     </div>
-                  ) : (
-                    <p className="mt-2 text-3xl font-black text-[#1a7f8c]">{totalPrice.toLocaleString()} Ks</p>
-                  )}
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between text-green-700">
+                        <span>လျှော့စျေး</span>
+                        <span>-{discountAmount.toLocaleString()} Ks</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Delivery ခ</span>
+                      <span>{deliveryFee.toLocaleString()} Ks</span>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-3xl font-black text-[#1a7f8c]">{finalPrice.toLocaleString()} Ks</p>
                   {discountAmount > 0 && (
                     <p className="mt-3 text-sm text-green-700">လျှော့စျေး: {discountAmount.toLocaleString()} Ks</p>
+                  )}
+                  {!customerTownship && (
+                    <p className="mt-3 text-xs text-gray-500">မြို့နယ်ရွေးပြီးပါက Delivery ခ အလိုအလျောက် တွက်ချက်ပါမည်။</p>
                   )}
                 </div>
               </div>
 
               <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">ငွေပေးချေမှု အချက်အလက်</h2>
-                <div className="rounded-3xl bg-[#f0fbfd] p-4 border border-[#d4f1f5]">
+                <div className="grid gap-3 sm:grid-cols-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('prepaid')}
+                    disabled={!primaryWallet}
+                    className={`flex items-center gap-3 rounded-3xl border p-4 text-left transition-colors ${
+                      paymentMethod === 'prepaid'
+                        ? 'border-[#1a7f8c] bg-[#f0fbfd] text-[#1a7f8c]'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-[#1a7f8c]'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    <CreditCard className="h-5 w-5" />
+                    <span className="font-bold">ကြိုတင်ငွေလွှဲ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canUseCod) {
+                        alert('ဤဆိုင်တွင် COD မဖွင့်ထားသေးပါ။ Seller မှ Store Settings တွင် COD ကို ဖွင့်ပေးရပါမည်။');
+                        return;
+                      }
+                      setPaymentMethod('cod');
+                    }}
+                    className={`flex items-center gap-3 rounded-3xl border p-4 text-left transition-colors ${
+                      paymentMethod === 'cod'
+                        ? 'border-[#1a7f8c] bg-[#f0fbfd] text-[#1a7f8c]'
+                        : canUseCod
+                          ? 'border-gray-200 bg-white text-gray-700 hover:border-[#1a7f8c]'
+                          : 'border-gray-200 bg-gray-50 text-gray-400'
+                    }`}
+                    aria-disabled={!canUseCod}
+                  >
+                    <Banknote className="h-5 w-5" />
+                    <span>
+                      <span className="block font-bold">COD</span>
+                      {!canUseCod && <span className="block text-xs font-medium">ဆိုင်မှ မဖွင့်ထားသေးပါ</span>}
+                    </span>
+                  </button>
+                </div>
+
+                {paymentMethod === 'prepaid' && primaryWallet ? (
+                  <div className="rounded-3xl bg-[#f0fbfd] p-4 border border-[#d4f1f5]">
                   <div className="flex items-center justify-between gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-500">ဘဏ်အမည်</p>
@@ -326,6 +404,14 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
                     {primaryWallet.provider} မှဖြင့် {finalPrice.toLocaleString()} Ks ကို ငွေလွှဲပါ။
                   </p>
                 </div>
+                ) : (
+                  <div className="rounded-3xl bg-[#fff8ed] p-4 border border-[#f5dfb8]">
+                    <p className="font-bold text-gray-900">Cash on Delivery</p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      ပစ္စည်းလက်ခံချိန်တွင် {finalPrice.toLocaleString()} Ks ကို ငွေသားဖြင့် ပေးချေနိုင်ပါသည်။
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -439,6 +525,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
                     />
                   </div>
 
+                  {paymentMethod === 'prepaid' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">ငွေလွှဲ Screenshot *</label>
                     <div className="border-2 border-dashed border-gray-300 rounded-3xl p-6 text-center hover:border-[#1a7f8c] transition-colors">
@@ -478,10 +565,11 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
                       </label>
                     </div>
                   </div>
+                  )}
 
                   <button
                     type="submit"
-                    disabled={isSubmitting || !paymentScreenshot}
+                    disabled={isSubmitting || (paymentMethod === 'prepaid' && !paymentScreenshot)}
                     className="w-full rounded-3xl bg-[#1a7f8c] px-6 py-4 text-base font-black text-white hover:bg-[#156a75] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? 'တင်ပြနေသည်...' : 'အော်ဒါတင်မည်'}

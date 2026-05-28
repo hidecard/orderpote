@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS stores (
   description TEXT,
   approval_status TEXT DEFAULT 'pending', -- pending, approved, rejected
   rejection_reason TEXT,
+  cod_enabled BOOLEAN DEFAULT FALSE,
+  delivery_fees_json TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
@@ -115,6 +117,8 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_township TEXT NOT NULL,
   quantity INTEGER NOT NULL,
   total_price INTEGER NOT NULL,
+  delivery_fee INTEGER DEFAULT 0,
+  payment_method TEXT DEFAULT 'prepaid',
   coupon_code TEXT,
   discount_amount INTEGER DEFAULT 0,
   payment_status TEXT DEFAULT 'pending', -- pending, paid, failed
@@ -243,6 +247,8 @@ export interface Store {
   description: string;
   approval_status: 'pending' | 'approved' | 'rejected';
   rejection_reason?: string;
+  cod_enabled?: boolean;
+  delivery_fees_json?: string;
   created_at: string;
   updated_at: string;
 }
@@ -357,6 +363,8 @@ export interface Order {
   customer_township: string;
   quantity: number;
   total_price: number;
+  delivery_fee?: number;
+  payment_method?: 'prepaid' | 'cod';
   coupon_code?: string;
   discount_amount?: number;
   payment_status: 'pending' | 'paid' | 'failed';

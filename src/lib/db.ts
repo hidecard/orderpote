@@ -208,6 +208,23 @@ async function ensureCouponCodesSchema(): Promise<void> {
   couponCodesSchemaEnsured = true;
 }
 
+let storesSchemaEnsured = false;
+async function ensureStoresSchema(): Promise<void> {
+  if (storesSchemaEnsured) return;
+
+  const pragmaResult = await turso.execute({ sql: 'PRAGMA table_info(stores)' });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('cod_enabled')) {
+    await turso.execute({ sql: 'ALTER TABLE stores ADD COLUMN cod_enabled BOOLEAN DEFAULT FALSE' });
+  }
+  if (!existingColumns.includes('delivery_fees_json')) {
+    await turso.execute({ sql: 'ALTER TABLE stores ADD COLUMN delivery_fees_json TEXT' });
+  }
+
+  storesSchemaEnsured = true;
+}
+
 let ordersSchemaEnsured = false;
 async function ensureOrdersSchema(): Promise<void> {
   if (ordersSchemaEnsured) return;
@@ -224,6 +241,8 @@ async function ensureOrdersSchema(): Promise<void> {
       customer_township TEXT NOT NULL,
       quantity INTEGER NOT NULL,
       total_price INTEGER NOT NULL,
+      delivery_fee INTEGER DEFAULT 0,
+      payment_method TEXT DEFAULT 'prepaid',
       coupon_code TEXT,
       discount_amount INTEGER DEFAULT 0,
       payment_status TEXT DEFAULT 'pending',
@@ -241,6 +260,12 @@ async function ensureOrdersSchema(): Promise<void> {
 
   if (!existingColumns.includes('coupon_code')) {
     await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN coupon_code TEXT' });
+  }
+  if (!existingColumns.includes('delivery_fee')) {
+    await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN delivery_fee INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('payment_method')) {
+    await turso.execute({ sql: "ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'prepaid'" });
   }
   if (!existingColumns.includes('discount_amount')) {
     await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN discount_amount INTEGER DEFAULT 0' });
@@ -349,6 +374,7 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
 
 // Order queries
 export async function getOrderById(orderId: string): Promise<Order | null> {
+  await ensureOrdersSchema();
   const result = await turso.execute({
     sql: 'SELECT * FROM orders WHERE id = ?',
     args: [orderId],
@@ -358,6 +384,7 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
 }
 
 export async function getOrdersByCustomerPhone(phone: string): Promise<Order[]> {
+  await ensureOrdersSchema();
   const result = await turso.execute({
     sql: 'SELECT * FROM orders WHERE customer_phone = ? ORDER BY created_at DESC',
     args: [phone],
@@ -394,7 +421,7 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
   }
   
   await turso.execute({
-    sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, coupon_code, discount_amount, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, delivery_fee, payment_method, coupon_code, discount_amount, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       order.product_id,
@@ -406,6 +433,8 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
       order.customer_township,
       order.quantity,
       order.total_price,
+      order.delivery_fee || 0,
+      order.payment_method || 'prepaid',
       order.coupon_code || null,
       order.discount_amount || 0,
       order.payment_status,
@@ -1346,6 +1375,7 @@ export async function deleteProductVariant(variantId: string): Promise<void> {
 
 // Create store
 export async function createStore(store: Omit<Store, 'id' | 'created_at' | 'updated_at'>): Promise<Store> {
+  await ensureStoresSchema();
   const id = `store-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
   
@@ -1389,6 +1419,7 @@ export async function createStore(store: Omit<Store, 'id' | 'created_at' | 'upda
 
 // Get store by user ID
 export async function getStoreByUserId(userId: string): Promise<Store | null> {
+  await ensureStoresSchema();
   const result = await turso.execute({
     sql: 'SELECT * FROM stores WHERE user_id = ?',
     args: [userId],
@@ -1399,6 +1430,7 @@ export async function getStoreByUserId(userId: string): Promise<Store | null> {
 
 // Get store by ID
 export async function getStoreById(storeId: string): Promise<Store | null> {
+  await ensureStoresSchema();
   const result = await turso.execute({
     sql: 'SELECT * FROM stores WHERE id = ?',
     args: [storeId],
@@ -1417,6 +1449,7 @@ export async function updateStoreApprovalStatus(storeId: string, status: 'pendin
 
 // Update store details
 export async function updateStore(storeId: string, store: Partial<Omit<Store, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'approval_status'>>): Promise<void> {
+  await ensureStoresSchema();
   const updates: string[] = [];
   const args: (string | number | null)[] = [];
 
@@ -1448,6 +1481,14 @@ export async function updateStore(storeId: string, store: Partial<Omit<Store, 'i
     updates.push('description = ?');
     args.push(store.description);
   }
+  if (store.cod_enabled !== undefined) {
+    updates.push('cod_enabled = ?');
+    args.push(store.cod_enabled ? 1 : 0);
+  }
+  if (store.delivery_fees_json !== undefined) {
+    updates.push('delivery_fees_json = ?');
+    args.push(store.delivery_fees_json);
+  }
 
   if (updates.length === 0) return;
 
@@ -1463,6 +1504,7 @@ export async function updateStore(storeId: string, store: Partial<Omit<Store, 'i
 
 // Get all pending stores (for admin)
 export async function getPendingStores(): Promise<Store[]> {
+  await ensureStoresSchema();
   const result = await turso.execute({
     sql: 'SELECT * FROM stores WHERE approval_status = ?',
     args: ['pending'],
@@ -1577,6 +1619,7 @@ export async function getAllOrders(): Promise<Order[]> {
 }
 
 export async function getOrdersBySellerId(userId: string): Promise<Order[]> {
+  await ensureOrdersSchema();
   const result = await turso.execute({
     sql: `
       SELECT o.*

@@ -69,6 +69,12 @@ export default function ReceiptTemplate({ order, product, variant, store }: Rece
               {order.total_price.toLocaleString()} Ks
             </span>
           </div>
+          <div className="pt-1 flex justify-between">
+            <span className="text-gray-600 text-xs">Delivery Fee</span>
+            <span className="text-xs font-semibold text-gray-900">
+              {(order.delivery_fee || 0).toLocaleString()} Ks
+            </span>
+          </div>
         </div>
       </div>
 
@@ -90,6 +96,9 @@ export default function ReceiptTemplate({ order, product, variant, store }: Rece
             <p className="text-xs font-semibold text-gray-700">Payment</p>
             <p className={`text-xs font-bold ${order.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
               {order.payment_status.toUpperCase()}
+            </p>
+            <p className="text-[10px] font-semibold text-gray-500">
+              {order.payment_method === 'cod' ? 'COD' : 'PREPAID'}
             </p>
           </div>
           <div className="bg-purple-100 p-2 rounded text-center">
