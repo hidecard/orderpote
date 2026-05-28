@@ -395,6 +395,31 @@ export async function getOrdersByCustomerPhone(phone: string): Promise<Order[]> 
   return rowsAs<Order>(result.rows);
 }
 
+export async function getOrdersForProcessing(userId: string): Promise<any[]> {
+  await ensureOrdersSchema();
+  const result = await turso.execute({
+    sql: `
+      SELECT 
+        o.*,
+        p.name as product_name,
+        p.cover_image_url as product_image,
+        pv.name as variant_name,
+        pv.size as variant_size,
+        pv.color as variant_color,
+        pv.price as variant_price
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      LEFT JOIN product_variants pv ON o.variant_id = pv.id
+      WHERE p.user_id = ? 
+        AND o.payment_status = 'paid'
+        AND o.delivery_status IN ('pending', 'preparing')
+      ORDER BY o.created_at ASC
+    `,
+    args: [userId],
+  });
+  return result.rows;
+}
+
 export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<Order> {
   await ensureOrdersSchema();
   const id = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

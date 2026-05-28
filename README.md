@@ -11,13 +11,14 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 - Seller registration and store approval flow
 - Store profile, logo, contact information, category, address, and description settings
 - Wallet setup for KPay, Wave Money, AYA Pay, CB Pay, KBZ iBanking, and other payment accounts
-- Product creation, editing, active/inactive status, product images, variants, price, stock, and public product links
+- Product creation, editing, active/inactive status, product images, variants, price, stock, cost price (COGS), and public product links
 - Product landing pages for buyers at `/order/:slug`
 - Product traffic analytics for seller product views
 - Coupon and discount code management
 - Cash on Delivery (COD) setting so buyers can checkout without a payment screenshot
 - Township-based delivery fees that are automatically added during checkout
 - Order list, order detail, payment status, delivery status, delivery service, and tracking ID management
+- Order batch processing with smart packing slips, pick lists, township sorting, and address labels with QR codes
 - Notifications for seller activity
 - Device management and login history for seller accounts
 - Profile settings and password update
@@ -152,9 +153,10 @@ npm run preview
 6. Create products in `/products/add`.
 7. Share the generated product link, usually `/order/:slug`.
 8. Manage incoming orders in `/orders`.
-9. Use `/discounts` for coupon codes and `/product-traffic` for view analytics.
-10. Use `/financial-dashboard` to track profit, COGS, and export financial reports.
-11. Enable COD and edit township delivery fees in `/store-settings`.
+9. Use `/orders/processing` to batch process orders, generate packing slips, and print address labels.
+10. Use `/discounts` for coupon codes and `/product-traffic` for view analytics.
+11. Use `/financial-dashboard` to track profit, COGS, and export financial reports.
+12. Enable COD and edit township delivery fees in `/store-settings`.
 
 ### Buyer Flow
 
@@ -197,6 +199,7 @@ npm run preview
 - `/product-traffic` - Product view analytics
 - `/financial-dashboard` - Financial dashboard with profit calculator and COGS tracking
 - `/orders` - Order list
+- `/orders/processing` - Order batch processing with packing slips and address labels
 - `/orders/:orderId` - Order detail
 - `/notifications` - Notifications
 - `/store-settings` - Store settings

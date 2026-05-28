@@ -18,6 +18,7 @@ import AddProductForm from './components/products/AddProductForm';
 import EditProductForm from './components/products/EditProductForm';
 import OrderList from './components/orders/OrderList';
 import OrderDetail from './components/orders/OrderDetail';
+import OrderBatchProcessing from './components/orders/OrderBatchProcessing';
 import StoreApproval from './components/admin/StoreApproval';
 import SellerManagement from './components/admin/SellerManagement';
 import PlanManagement from './components/admin/PlanManagement';
@@ -390,6 +391,21 @@ function App() {
               {
                 title: 'အော်ဒါများ | OrderPote',
                 description: 'OrderPote တွင် ဖောက်သည်အော်ဒါများနှင့် ငွေပေးချေမှုစစ်ဆေးမှုများကို စီမံခန့်ခွဲပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/orders/processing"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Order Batch Processing">
+                  <OrderBatchProcessing />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း | OrderPote',
+                description: 'OrderPote တွင် ပို့ဆောင်ရန် အသင့်ဖြစ်နေသော အော်ဒါများကို အုပ်စ်ဖွဲ့ပြီး ထုပ်ပိုးမှုအစီရင်ခံစာနှင့် လိပ်စာကတ်များ ထုတ်ယူပါ။',
                 noIndex: true,
               }
             )}

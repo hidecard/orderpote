@@ -43,6 +43,7 @@ export default function Sidebar() {
         { icon: BarChart, label: 'ပစ္စည်းလာရောက်မှု', path: '/product-traffic' },
         { icon: TrendingUp, label: 'ငွေကြေး ဒက်ရှ်ဘုတ်', path: '/financial-dashboard' },
         { icon: ShoppingCart, label: 'အော်ဒါများ', path: '/orders' },
+        { icon: Package, label: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း', path: '/orders/processing' },
         { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
         { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings' },
         { icon: Smartphone, label: 'ကိရိယာစီမံခန့်ခွဲမှု', path: '/device-management' },
