@@ -10,6 +10,7 @@ export default function AddProductForm() {
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [variants, setVariants] = useState<Partial<ProductVariant>[]>([]);
   const [currentVariant, setCurrentVariant] = useState({
@@ -149,6 +150,7 @@ export default function AddProductForm() {
         slug,
         cover_image_url: images[0],
         is_active: isActive,
+        cost_price: parseInt(costPrice) || 0,
       });
 
       // Create product images
@@ -248,6 +250,21 @@ export default function AddProductForm() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Describe your product..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ရင်းနှီးစျေးနှုန်း (Cost Price - COGS)
+              </label>
+              <input
+                type="number"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="0"
+                min="0"
+              />
+              <p className="text-sm text-gray-500 mt-1">ပစ္စည်းတစ်ခုချင်းစီရဲ့ ရင်းနှီးရတဲ့ စျေးနှုန်း (ကျပ်)</p>
             </div>
           </div>
         </div>

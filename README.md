@@ -153,7 +153,8 @@ npm run preview
 7. Share the generated product link, usually `/order/:slug`.
 8. Manage incoming orders in `/orders`.
 9. Use `/discounts` for coupon codes and `/product-traffic` for view analytics.
-10. Enable COD and edit township delivery fees in `/store-settings`.
+10. Use `/financial-dashboard` to track profit, COGS, and export financial reports.
+11. Enable COD and edit township delivery fees in `/store-settings`.
 
 ### Buyer Flow
 
@@ -194,6 +195,7 @@ npm run preview
 - `/products/edit/:productId` - Edit product
 - `/discounts` - Coupon and discount management
 - `/product-traffic` - Product view analytics
+- `/financial-dashboard` - Financial dashboard with profit calculator and COGS tracking
 - `/orders` - Order list
 - `/orders/:orderId` - Order detail
 - `/notifications` - Notifications

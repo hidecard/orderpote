@@ -117,6 +117,7 @@ export default function EditProductForm() {
   const [existingVariants, setExistingVariants] = useState<ProductVariant[]>([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [newImages, setNewImages] = useState<string[]>([]);
   const [updatedVariants, setUpdatedVariants] = useState<{ id: string; name: string; size?: string; color?: string; color_hex?: string; price: number; stock: number }[]>([]);
   const [currentVariant, setCurrentVariant] = useState({
@@ -141,6 +142,7 @@ export default function EditProductForm() {
           setProduct(productData);
           setName(productData.name);
           setDescription(productData.description || '');
+          setCostPrice(productData.cost_price?.toString() || '');
           setIsActive(productData.is_active);
 
           const imagesData = await getProductImages(productId);
@@ -301,6 +303,7 @@ export default function EditProductForm() {
       await updateProduct(productId, {
         name,
         description,
+        cost_price: parseInt(costPrice) || 0,
         is_active: isActive,
       });
 
@@ -449,6 +452,21 @@ export default function EditProductForm() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Describe your product..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ရင်းနှီးစျေးနှုန်း (Cost Price - COGS)
+              </label>
+              <input
+                type="number"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="0"
+                min="0"
+              />
+              <p className="text-sm text-gray-500 mt-1">ပစ္စည်းတစ်ခုချင်းစီရဲ့ ရင်းနှီးရတဲ့ စျေးနှုန်း (ကျပ်)</p>
             </div>
           </div>
         </div>

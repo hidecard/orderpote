@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS products (
   slug TEXT UNIQUE NOT NULL,
   cover_image_url TEXT,
   is_active BOOLEAN DEFAULT TRUE,
+  cost_price INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id),
@@ -118,6 +119,7 @@ CREATE TABLE IF NOT EXISTS orders (
   quantity INTEGER NOT NULL,
   total_price INTEGER NOT NULL,
   delivery_fee INTEGER DEFAULT 0,
+  product_cost INTEGER DEFAULT 0,
   payment_method TEXT DEFAULT 'prepaid',
   coupon_code TEXT,
   discount_amount INTEGER DEFAULT 0,
@@ -272,6 +274,7 @@ export interface Product {
   slug: string;
   cover_image_url?: string;
   is_active: boolean;
+  cost_price?: number;
   low_stock_threshold?: number;
   created_at: string;
   updated_at: string;
@@ -364,6 +367,7 @@ export interface Order {
   quantity: number;
   total_price: number;
   delivery_fee?: number;
+  product_cost?: number;
   payment_method?: 'prepaid' | 'cod';
   coupon_code?: string;
   discount_amount?: number;

@@ -12,6 +12,7 @@ import SellerPending from './components/auth/SellerPending';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './components/dashboard/Dashboard';
 import Discounts from './components/dashboard/Discounts';
+import FinancialDashboard from './components/dashboard/FinancialDashboard';
 import ProductList from './components/products/ProductList';
 import AddProductForm from './components/products/AddProductForm';
 import EditProductForm from './components/products/EditProductForm';
@@ -359,6 +360,21 @@ function App() {
               {
                 title: 'ပစ္စည်းလာရောက်မှု | OrderPote',
                 description: 'OrderPote တွင် Product Link လှုပ်ရှားမှုနှင့် ဝယ်သူလာရောက်မှုများကို ကြည့်ရှုပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/financial-dashboard"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Financial Dashboard">
+                  <FinancialDashboard />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'ငွေကြေး ဒက်ရှ်ဘုတ် | OrderPote',
+                description: 'OrderPote တွင် အမြတ်အမြတ်နှင့် ကုန်ကျစရိတ်များကို ကြည့်ရှုပါ။',
                 noIndex: true,
               }
             )}

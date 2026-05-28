@@ -198,6 +198,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         quantity,
         total_price: itemTotal + deliveryFee,
         delivery_fee: deliveryFee,
+        product_cost: (product.cost_price || 0) * quantity,
         payment_method: paymentMethod,
         coupon_code: appliedCoupon?.code,
         discount_amount: discountAmount,

@@ -273,6 +273,9 @@ async function ensureOrdersSchema(): Promise<void> {
   if (!existingColumns.includes('updated_at')) {
     await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP' });
   }
+  if (!existingColumns.includes('product_cost')) {
+    await turso.execute({ sql: 'ALTER TABLE orders ADD COLUMN product_cost INTEGER DEFAULT 0' });
+  }
 
   ordersSchemaEnsured = true;
 }
@@ -421,7 +424,7 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
   }
   
   await turso.execute({
-    sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, delivery_fee, payment_method, coupon_code, discount_amount, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO orders (id, product_id, variant_id, customer_name, customer_phone, customer_address, customer_region, customer_township, quantity, total_price, delivery_fee, product_cost, payment_method, coupon_code, discount_amount, payment_status, delivery_status, payment_screenshot_url, delivery_service, tracking_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       order.product_id,
@@ -434,6 +437,7 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
       order.quantity,
       order.total_price,
       order.delivery_fee || 0,
+      order.product_cost || 0,
       order.payment_method || 'prepaid',
       order.coupon_code || null,
       order.discount_amount || 0,
@@ -708,6 +712,171 @@ export async function getDashboardStats(userId: string) {
     pendingOrders: Number(pending.count),
     totalViews: Number(views.count),
   };
+}
+
+// Financial Dashboard queries
+export async function getFinancialStats(userId: string, startDate?: string, endDate?: string) {
+  const dateFilter = startDate && endDate 
+    ? `AND DATE(o.created_at) BETWEEN DATE(?) AND DATE(?)`
+    : '';
+  const dateArgs = startDate && endDate ? [startDate, endDate] : [];
+
+  const revenueResult = await turso.execute({
+    sql: `
+      SELECT COALESCE(SUM(o.total_price), 0) as total
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ? ${dateFilter}
+    `,
+    args: ['paid', userId, ...dateArgs],
+  });
+
+  const productCostResult = await turso.execute({
+    sql: `
+      SELECT COALESCE(SUM(o.product_cost), 0) as total
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ? ${dateFilter}
+    `,
+    args: ['paid', userId, ...dateArgs],
+  });
+
+  const deliveryCostResult = await turso.execute({
+    sql: `
+      SELECT COALESCE(SUM(o.delivery_fee), 0) as total
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ? ${dateFilter}
+    `,
+    args: ['paid', userId, ...dateArgs],
+  });
+
+  const ordersCountResult = await turso.execute({
+    sql: `
+      SELECT COUNT(*) as count
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ? ${dateFilter}
+    `,
+    args: ['paid', userId, ...dateArgs],
+  });
+
+  const revenue = rowAs<RevenueRow>(revenueResult.rows[0]);
+  const productCost = rowAs<RevenueRow>(productCostResult.rows[0]);
+  const deliveryCost = rowAs<RevenueRow>(deliveryCostResult.rows[0]);
+  const ordersCount = rowAs<CountRow>(ordersCountResult.rows[0]);
+
+  const totalRevenue = Number(revenue.total);
+  const totalProductCost = Number(productCost.total);
+  const totalDeliveryCost = Number(deliveryCost.total);
+  const totalCost = totalProductCost + totalDeliveryCost;
+  const netProfit = totalRevenue - totalCost;
+
+  return {
+    totalRevenue,
+    totalProductCost,
+    totalDeliveryCost,
+    totalCost,
+    netProfit,
+    totalOrders: Number(ordersCount.count),
+    profitMargin: totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : '0.00',
+  };
+}
+
+export async function getProfitByDate(userId: string, days: number = 30) {
+  const result = await turso.execute({
+    sql: `
+      SELECT 
+        DATE(o.created_at) as date,
+        COALESCE(SUM(o.total_price), 0) as revenue,
+        COALESCE(SUM(o.product_cost), 0) as product_cost,
+        COALESCE(SUM(o.delivery_fee), 0) as delivery_cost,
+        COALESCE(SUM(o.total_price) - SUM(o.product_cost) - SUM(o.delivery_fee), 0) as profit
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ? 
+        AND DATE(o.created_at) >= DATE('now', '-' || ? || ' days')
+      GROUP BY DATE(o.created_at)
+      ORDER BY date ASC
+    `,
+    args: ['paid', userId, days.toString()],
+  });
+
+  return result.rows.map(row => ({
+    date: String(row.date),
+    revenue: Number(row.revenue),
+    productCost: Number(row.product_cost),
+    deliveryCost: Number(row.delivery_cost),
+    profit: Number(row.profit),
+  }));
+}
+
+export async function getProfitByProduct(userId: string, limit: number = 10) {
+  const result = await turso.execute({
+    sql: `
+      SELECT 
+        p.name as product_name,
+        COALESCE(SUM(o.total_price), 0) as revenue,
+        COALESCE(SUM(o.product_cost), 0) as product_cost,
+        COALESCE(SUM(o.delivery_fee), 0) as delivery_cost,
+        COALESCE(SUM(o.total_price) - SUM(o.product_cost) - SUM(o.delivery_fee), 0) as profit,
+        COUNT(*) as orders_count
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE o.payment_status = ? AND p.user_id = ?
+      GROUP BY p.id, p.name
+      ORDER BY profit DESC
+      LIMIT ?
+    `,
+    args: ['paid', userId, limit.toString()],
+  });
+
+  return result.rows.map(row => ({
+    productName: String(row.product_name),
+    revenue: Number(row.revenue),
+    productCost: Number(row.product_cost),
+    deliveryCost: Number(row.delivery_cost),
+    profit: Number(row.profit),
+    ordersCount: Number(row.orders_count),
+  }));
+}
+
+export async function getFinancialReportData(userId: string, startDate: string, endDate: string) {
+  const result = await turso.execute({
+    sql: `
+      SELECT 
+        o.id as order_id,
+        p.name as product_name,
+        o.customer_name,
+        o.quantity,
+        o.total_price as revenue,
+        o.product_cost,
+        o.delivery_fee,
+        (o.total_price - o.product_cost - o.delivery_fee) as profit,
+        o.payment_status,
+        o.delivery_status,
+        o.created_at
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE p.user_id = ? AND DATE(o.created_at) BETWEEN DATE(?) AND DATE(?)
+      ORDER BY o.created_at DESC
+    `,
+    args: [userId, startDate, endDate],
+  });
+
+  return result.rows.map(row => ({
+    orderId: String(row.order_id),
+    productName: String(row.product_name),
+    customerName: String(row.customer_name),
+    quantity: Number(row.quantity),
+    revenue: Number(row.revenue),
+    productCost: Number(row.product_cost),
+    deliveryFee: Number(row.delivery_fee),
+    profit: Number(row.profit),
+    paymentStatus: String(row.payment_status),
+    deliveryStatus: String(row.delivery_status),
+    createdAt: String(row.created_at),
+  }));
 }
 
 // Admin: list sellers
@@ -1136,13 +1305,28 @@ export async function trackPageView(productId: string) {
   });
 }
 
+let productsSchemaEnsured = false;
+async function ensureProductsSchema(): Promise<void> {
+  if (productsSchemaEnsured) return;
+
+  const pragmaResult = await turso.execute({ sql: 'PRAGMA table_info(products)' });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('cost_price')) {
+    await turso.execute({ sql: 'ALTER TABLE products ADD COLUMN cost_price INTEGER DEFAULT 0' });
+  }
+
+  productsSchemaEnsured = true;
+}
+
 // Create product
 export async function createProduct(product: Omit<Product, 'id' | 'created_at' | 'updated_at'>): Promise<Product> {
+  await ensureProductsSchema();
   const id = `prod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date().toISOString();
   
   await turso.execute({
-    sql: 'INSERT INTO products (id, user_id, store_id, name, description, slug, cover_image_url, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    sql: 'INSERT INTO products (id, user_id, store_id, name, description, slug, cover_image_url, is_active, cost_price, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     args: [
       id,
       product.user_id,
@@ -1152,6 +1336,7 @@ export async function createProduct(product: Omit<Product, 'id' | 'created_at' |
       product.slug,
       product.cover_image_url || null,
       product.is_active ? 1 : 0,
+      product.cost_price || 0,
       now,
       now,
     ],
