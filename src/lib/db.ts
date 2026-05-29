@@ -1,5 +1,5 @@
 import turso from './turso';
-import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog, Device, DeviceUsage } from './schema';
+import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog, Device, DeviceUsage, Supplier, PurchaseOrder, ProductAttribute } from './schema';
 
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
@@ -144,6 +144,97 @@ async function ensureSubscriptionPaymentsSchema(): Promise<void> {
   }
 
   subscriptionPaymentsSchemaEnsured = true;
+}
+
+let suppliersSchemaEnsured = false;
+async function ensureSuppliersSchema(): Promise<void> {
+  if (suppliersSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS suppliers (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      store_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      contact_person TEXT,
+      phone TEXT,
+      email TEXT,
+      address TEXT,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (store_id) REFERENCES stores(id)
+    )`,
+  });
+
+  suppliersSchemaEnsured = true;
+}
+
+let purchaseOrdersSchemaEnsured = false;
+async function ensurePurchaseOrdersSchema(): Promise<void> {
+  if (purchaseOrdersSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS purchase_orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      store_id TEXT NOT NULL,
+      supplier_id TEXT NOT NULL,
+      product_id TEXT NOT NULL,
+      variant_id TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      unit_cost INTEGER NOT NULL,
+      total_cost INTEGER NOT NULL,
+      status TEXT DEFAULT 'received',
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (store_id) REFERENCES stores(id),
+      FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+    )`,
+  });
+
+  purchaseOrdersSchemaEnsured = true;
+}
+
+let productVariantsSchemaEnsured = false;
+async function ensureProductVariantsSchema(): Promise<void> {
+  if (productVariantsSchemaEnsured) return;
+
+  const pragmaResult = await turso.execute({ sql: 'PRAGMA table_info(product_variants)' });
+  const existingColumns = rowsAs<{ name: string }>(pragmaResult.rows).map((row) => String(row.name));
+
+  if (!existingColumns.includes('cost_price')) {
+    await turso.execute({ sql: 'ALTER TABLE product_variants ADD COLUMN cost_price INTEGER DEFAULT 0' });
+  }
+  if (!existingColumns.includes('attributes_json')) {
+    await turso.execute({ sql: 'ALTER TABLE product_variants ADD COLUMN attributes_json TEXT' });
+  }
+
+  productVariantsSchemaEnsured = true;
+}
+
+let productAttributesSchemaEnsured = false;
+async function ensureProductAttributesSchema(): Promise<void> {
+  if (productAttributesSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS product_attributes (
+      id TEXT PRIMARY KEY,
+      product_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      values TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )`,
+  });
+
+  productAttributesSchemaEnsured = true;
 }
 
 let couponCodesSchemaEnsured = false;
@@ -1849,6 +1940,304 @@ export async function updateOrderPaymentStatus(orderId: string, status: 'pending
     sql: 'UPDATE orders SET payment_status = ?, updated_at = ? WHERE id = ?',
     args: [status, new Date().toISOString(), orderId],
   });
+}
+
+// Supplier functions
+export async function getSuppliersByStoreId(storeId: string): Promise<Supplier[]> {
+  await ensureSuppliersSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM suppliers WHERE store_id = ? ORDER BY name ASC',
+    args: [storeId],
+  });
+  return rowsAs<Supplier>(result.rows);
+}
+
+export async function getSupplierById(supplierId: string): Promise<Supplier | null> {
+  await ensureSuppliersSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM suppliers WHERE id = ?',
+    args: [supplierId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<Supplier>(result.rows[0]);
+}
+
+export async function createSupplier(supplier: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>): Promise<Supplier> {
+  await ensureSuppliersSchema();
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  await turso.execute({
+    sql: 'INSERT INTO suppliers (id, user_id, store_id, name, contact_person, phone, email, address, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      supplier.user_id,
+      supplier.store_id,
+      supplier.name,
+      supplier.contact_person || null,
+      supplier.phone || null,
+      supplier.email || null,
+      supplier.address || null,
+      supplier.notes || null,
+      now,
+      now,
+    ],
+  });
+
+  return { ...supplier, id, created_at: now, updated_at: now };
+}
+
+export async function updateSupplier(supplierId: string, updates: Partial<Omit<Supplier, 'id' | 'user_id' | 'store_id' | 'created_at' | 'updated_at'>>): Promise<void> {
+  await ensureSuppliersSchema();
+  const updateFields: string[] = [];
+  const args: (string | null)[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.contact_person !== undefined) {
+    updateFields.push('contact_person = ?');
+    args.push(updates.contact_person);
+  }
+  if (updates.phone !== undefined) {
+    updateFields.push('phone = ?');
+    args.push(updates.phone);
+  }
+  if (updates.email !== undefined) {
+    updateFields.push('email = ?');
+    args.push(updates.email);
+  }
+  if (updates.address !== undefined) {
+    updateFields.push('address = ?');
+    args.push(updates.address);
+  }
+  if (updates.notes !== undefined) {
+    updateFields.push('notes = ?');
+    args.push(updates.notes);
+  }
+
+  if (updateFields.length === 0) return;
+
+  updateFields.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(supplierId);
+
+  await turso.execute({
+    sql: `UPDATE suppliers SET ${updateFields.join(', ')} WHERE id = ?`,
+    args,
+  });
+}
+
+export async function deleteSupplier(supplierId: string): Promise<void> {
+  await ensureSuppliersSchema();
+  await turso.execute({
+    sql: 'DELETE FROM suppliers WHERE id = ?',
+    args: [supplierId],
+  });
+}
+
+// Purchase Order functions
+export async function getPurchaseOrdersByStoreId(storeId: string): Promise<any[]> {
+  await ensurePurchaseOrdersSchema();
+  const result = await turso.execute({
+    sql: `
+      SELECT po.*, s.name as supplier_name, p.name as product_name, pv.name as variant_name
+      FROM purchase_orders po
+      INNER JOIN suppliers s ON po.supplier_id = s.id
+      INNER JOIN products p ON po.product_id = p.id
+      INNER JOIN product_variants pv ON po.variant_id = pv.id
+      WHERE po.store_id = ?
+      ORDER BY po.created_at DESC
+    `,
+    args: [storeId],
+  });
+  return result.rows;
+}
+
+export async function getPurchaseOrderById(poId: string): Promise<PurchaseOrder | null> {
+  await ensurePurchaseOrdersSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM purchase_orders WHERE id = ?',
+    args: [poId],
+  });
+  if (result.rows.length === 0) return null;
+  return rowAs<PurchaseOrder>(result.rows[0]);
+}
+
+export async function createPurchaseOrder(po: Omit<PurchaseOrder, 'id' | 'created_at' | 'updated_at'>): Promise<PurchaseOrder> {
+  await ensurePurchaseOrdersSchema();
+  await ensureProductVariantsSchema();
+
+  const id = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date().toISOString();
+
+  // Get current variant stock and cost
+  const variant = await getProductVariantById(po.variant_id);
+  if (!variant) {
+    throw new Error('Product variant not found');
+  }
+
+  const currentStock = variant.stock || 0;
+  const currentCost = variant.cost_price || 0;
+  const newStock = currentStock + po.quantity;
+
+  // Calculate moving average cost: (Current Stock × Current Cost + New Qty × New Cost) / (Current Stock + New Qty)
+  const newCost = currentStock > 0
+    ? Math.round((currentStock * currentCost + po.quantity * po.unit_cost) / newStock)
+    : po.unit_cost;
+
+  // Update variant stock and cost
+  await turso.execute({
+    sql: 'UPDATE product_variants SET stock = ?, cost_price = ? WHERE id = ?',
+    args: [newStock, newCost, po.variant_id],
+  });
+
+  // Create purchase order record
+  await turso.execute({
+    sql: 'INSERT INTO purchase_orders (id, user_id, store_id, supplier_id, product_id, variant_id, quantity, unit_cost, total_cost, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      po.user_id,
+      po.store_id,
+      po.supplier_id,
+      po.product_id,
+      po.variant_id,
+      po.quantity,
+      po.unit_cost,
+      po.total_cost,
+      po.status || 'received',
+      po.notes || null,
+      now,
+      now,
+    ],
+  });
+
+  return { ...po, id, created_at: now, updated_at: now };
+}
+
+export async function updatePurchaseOrderStatus(poId: string, status: 'received' | 'pending'): Promise<void> {
+  await ensurePurchaseOrdersSchema();
+  await turso.execute({
+    sql: 'UPDATE purchase_orders SET status = ?, updated_at = ? WHERE id = ?',
+    args: [status, new Date().toISOString(), poId],
+  });
+}
+
+export async function deletePurchaseOrder(poId: string): Promise<void> {
+  await ensurePurchaseOrdersSchema();
+  await turso.execute({
+    sql: 'DELETE FROM purchase_orders WHERE id = ?',
+    args: [poId],
+  });
+}
+
+// Product Attributes functions
+export async function getProductAttributes(productId: string): Promise<ProductAttribute[]> {
+  await ensureProductAttributesSchema();
+  const result = await turso.execute({
+    sql: 'SELECT * FROM product_attributes WHERE product_id = ? ORDER BY sort_order ASC',
+    args: [productId],
+  });
+  return result.rows.map(row => ({
+    id: String(row.id),
+    product_id: String(row.product_id),
+    name: String(row.name),
+    values: JSON.parse(String(row.values)),
+    sort_order: Number(row.sort_order),
+    created_at: String(row.created_at),
+  }));
+}
+
+export async function createProductAttribute(attribute: Omit<ProductAttribute, 'id' | 'created_at'>): Promise<ProductAttribute> {
+  await ensureProductAttributesSchema();
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  await turso.execute({
+    sql: 'INSERT INTO product_attributes (id, product_id, name, values, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      attribute.product_id,
+      attribute.name,
+      JSON.stringify(attribute.values),
+      attribute.sort_order,
+      now,
+    ],
+  });
+
+  return { ...attribute, id, created_at: now };
+}
+
+export async function updateProductAttribute(attributeId: string, updates: Partial<Omit<ProductAttribute, 'id' | 'product_id' | 'created_at'>>): Promise<void> {
+  await ensureProductAttributesSchema();
+  const updateFields: string[] = [];
+  const args: (string | number)[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.values !== undefined) {
+    updateFields.push('values = ?');
+    args.push(JSON.stringify(updates.values));
+  }
+  if (updates.sort_order !== undefined) {
+    updateFields.push('sort_order = ?');
+    args.push(updates.sort_order);
+  }
+
+  if (updateFields.length === 0) return;
+
+  args.push(attributeId);
+
+  await turso.execute({
+    sql: `UPDATE product_attributes SET ${updateFields.join(', ')} WHERE id = ?`,
+    args,
+  });
+}
+
+export async function deleteProductAttribute(attributeId: string): Promise<void> {
+  await ensureProductAttributesSchema();
+  await turso.execute({
+    sql: 'DELETE FROM product_attributes WHERE id = ?',
+    args: [attributeId],
+  });
+}
+
+export async function deleteProductAttributesByProductId(productId: string): Promise<void> {
+  await ensureProductAttributesSchema();
+  await turso.execute({
+    sql: 'DELETE FROM product_attributes WHERE product_id = ?',
+    args: [productId],
+  });
+}
+
+// Update variant creation to handle attributes_json
+export async function createProductVariantWithAttributes(
+  variant: Omit<ProductVariant, 'id' | 'created_at'>,
+  attributes: Record<string, string>
+): Promise<ProductVariant> {
+  await ensureProductVariantsSchema();
+
+  const id = generateId();
+  const now = new Date().toISOString();
+
+  await turso.execute({
+    sql: 'INSERT INTO product_variants (id, product_id, name, price, stock, cost_price, attributes_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      variant.product_id,
+      variant.name,
+      variant.price,
+      variant.stock || 0,
+      variant.cost_price || 0,
+      JSON.stringify(attributes),
+      now,
+    ],
+  });
+
+  return { ...variant, id, created_at: now };
 }
 
 // Update order delivery status

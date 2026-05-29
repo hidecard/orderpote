@@ -81,6 +81,19 @@ CREATE TABLE IF NOT EXISTS product_variants (
   name TEXT NOT NULL, -- e.g., "Size: M, Color: Black"
   price INTEGER NOT NULL, -- in pyas
   stock INTEGER DEFAULT 0,
+  cost_price INTEGER DEFAULT 0, -- in pyas, for COGS calculation
+  attributes_json TEXT, -- JSON string storing custom attribute combinations, e.g., {"size": "M", "color": "Black"}
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Product attributes (custom attribute definitions)
+CREATE TABLE IF NOT EXISTS product_attributes (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL,
+  name TEXT NOT NULL, -- e.g., "အလေးချိန်", "Volume", "အရသာ"
+  values TEXT NOT NULL, -- JSON array of values, e.g., ["1 Kg", "5 Kg"] or ["100 ml", "500 ml"]
+  sort_order INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
@@ -94,6 +107,45 @@ CREATE TABLE IF NOT EXISTS product_bundles (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   FOREIGN KEY (bundle_product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Suppliers
+CREATE TABLE IF NOT EXISTS suppliers (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  store_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  contact_person TEXT,
+  phone TEXT,
+  email TEXT,
+  address TEXT,
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (store_id) REFERENCES stores(id)
+);
+
+-- Purchase orders
+CREATE TABLE IF NOT EXISTS purchase_orders (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  store_id TEXT NOT NULL,
+  supplier_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  variant_id TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  unit_cost INTEGER NOT NULL, -- in pyas
+  total_cost INTEGER NOT NULL, -- in pyas
+  status TEXT DEFAULT 'received', -- received, pending
+  notes TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (store_id) REFERENCES stores(id),
+  FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+  FOREIGN KEY (product_id) REFERENCES products(id),
+  FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
 
 -- Recommended products
@@ -352,7 +404,48 @@ export interface ProductVariant {
   color_hex?: string;
   price: number;
   stock: number;
+  cost_price?: number;
+  attributes_json?: string; // JSON string for custom attributes
   created_at: string;
+}
+
+export interface ProductAttribute {
+  id: string;
+  product_id: string;
+  name: string;
+  values: string[]; // Array of attribute values
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Supplier {
+  id: string;
+  user_id: string;
+  store_id: string;
+  name: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  user_id: string;
+  store_id: string;
+  supplier_id: string;
+  product_id: string;
+  variant_id: string;
+  quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  status: 'received' | 'pending';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Order {

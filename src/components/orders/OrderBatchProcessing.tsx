@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { CheckSquare, Square, Package, MapPin, Printer, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getOrdersForProcessing } from '../../lib/db';
-import QRCode from 'qrcode';
 
 interface OrderWithDetails {
   id: string;
@@ -28,7 +27,6 @@ export default function OrderBatchProcessing() {
   const [isLoading, setIsLoading] = useState(true);
   const [showPackingSlip, setShowPackingSlip] = useState(false);
   const [showAddressLabels, setShowAddressLabels] = useState(false);
-  const [qrCodes, setQrCodes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchOrders() {
@@ -259,7 +257,7 @@ export default function OrderBatchProcessing() {
           <div class="label-header">
             <div class="order-id">Order ID: ${order.id}</div>
             <div class="qr-code">
-              ${qrCodes[order.id] ? `<img src="${qrCodes[order.id]}" alt="QR Code" width="50" height="50" />` : ''}
+              <!-- QR Code placeholder -->
             </div>
           </div>
           <h3 class="label-name">${order.customer_name}</h3>
@@ -594,9 +592,6 @@ export default function OrderBatchProcessing() {
                     <div key={order.id} className="border-2 border-gray-300 p-4 rounded-lg">
                       <div className="flex justify-between items-start mb-2">
                         <div className="text-xs text-gray-500">Order ID: {order.id}</div>
-                        {qrCodes[order.id] && (
-                          <img src={qrCodes[order.id]} alt="QR Code" width={50} height={50} />
-                        )}
                       </div>
                       <h3 className="font-bold text-lg mb-1">{order.customer_name}</h3>
                       <p className="text-sm text-gray-600 mb-1">{order.customer_phone}</p>

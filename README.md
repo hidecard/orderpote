@@ -11,8 +11,12 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 - Seller registration and store approval flow
 - Store profile, logo, contact information, category, address, and description settings
 - Wallet setup for KPay, Wave Money, AYA Pay, CB Pay, KBZ iBanking, and other payment accounts
+- **Dynamic Custom Attributes** - Define custom product attributes (e.g., "အလေးချိန်", "Volume", "အရသာ") with values (e.g., "1 Kg, 5 Kg") instead of hardcoded Size/Color
+- **Auto Variant Matrix Generator** - Automatically generates all possible variant combinations from custom attributes in a table format
 - Product creation, editing, active/inactive status, product images, variants, price, stock, cost price (COGS), and public product links
-- Product landing pages for buyers at `/order/:slug`
+- Product landing pages for buyers at `/order/:slug` with dynamic attribute labels
+- **Supplier Directory** - Register and manage supplier details (name, contact person, phone, email, address, notes)
+- **Purchase Order Intake** - Create purchase orders to add stock to variants with moving average COGS calculation
 - Product traffic analytics for seller product views
 - Coupon and discount code management
 - Cash on Delivery (COD) setting so buyers can checkout without a payment screenshot
@@ -26,7 +30,8 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 ### Buyer Features
 
 - Public product page without account login
-- Variant and quantity selection
+- **Dynamic attribute selection** - Select from seller-defined custom attributes (e.g., weight, volume, flavor) with real-time price and stock updates
+- Variant and quantity selection (traditional Size/Color or custom attributes)
 - Checkout with customer name, phone, address, region, township, and payment screenshot
 - COD checkout when the seller enables Cash on Delivery
 - Automatic delivery fee calculation after selecting region and township
@@ -43,9 +48,13 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 - Plan management for monthly/yearly prices, trial days, and descriptions
 - Admin profile settings
 
-### Recent Cleanup
+### Recent Updates
 
-- Staff Management has been removed from the app.
+- **Dynamic Custom Attributes Feature** - Sellers can now create unlimited custom attributes (not just Size/Color) for products like Grocery, Cosmetics, Food & Beverage
+- **Auto Variant Matrix Generator** - Frontend JavaScript automatically generates all possible variant combinations from custom attributes
+- **Supplier & Purchase Order Management** - Suppliers directory and PO intake flow for stock management with moving average COGS calculation
+- **Live Price & Stock Updates** - Buyer landing page updates price and stock in real-time when selecting different attribute values
+- **Staff Management** has been removed from the app.
 - Seller access now depends on the seller's own store record only.
 - Device tracking now records seller account usage only.
 
@@ -60,6 +69,40 @@ OrderPote သည် မြန်မာ Online Seller များအတွက်
 - Recharts
 - Turso / LibSQL
 - Vercel serverless API for dynamic Open Graph metadata
+
+## Key Features Explained
+
+### Dynamic Custom Attributes System
+
+Unlike traditional e-commerce platforms that hardcode Size and Color, OrderPote allows sellers to define unlimited custom attributes:
+
+**For Sellers:**
+- Define custom attribute names (e.g., "အလေးချိန်", "Volume", "အရသာ", "အရည်")
+- Add multiple values for each attribute (e.g., "1 Kg, 5 Kg, 10 Kg" or "100 ml, 500 ml, 1 L")
+- Auto-generate all possible variant combinations using Cartesian product algorithm
+- Set individual selling price, stock quantity, and cost price (COGS) for each variant
+- Works for any product type: Grocery, Cosmetics, Food & Beverage, Electronics, etc.
+
+**For Buyers:**
+- See dynamic attribute labels based on seller's definitions
+- Select attribute values with real-time price and stock updates
+- Clear visual feedback for out-of-stock variants
+
+### Purchase Order & Supplier Management
+
+**Supplier Directory:**
+- Register suppliers with name, contact person, phone, email, address, and notes
+- Centralized supplier management for all purchase orders
+
+**Purchase Order Intake:**
+- Create purchase orders to add stock to product variants
+- Select supplier, product, and variant
+- Enter quantity and unit cost
+- System automatically:
+  - Updates variant stock quantity
+  - Calculates moving average COGS: `(Current Stock × Current Cost + New Qty × New Cost) / (Current Stock + New Qty)`
+  - Records purchase order history for tracking
+- Track cost of goods sold accurately over time
 
 ## Project Structure
 
@@ -150,18 +193,30 @@ npm run preview
 3. Wait for admin approval at `/seller-pending`.
 4. After approval, use `/dashboard` to manage the store.
 5. Add payment accounts in `/wallet-setup`.
-6. Create products in `/products/add`.
-7. Share the generated product link, usually `/order/:slug`.
-8. Manage incoming orders in `/orders`.
-9. Use `/orders/processing` to batch process orders, generate packing slips, and print address labels.
-10. Use `/discounts` for coupon codes and `/product-traffic` for view analytics.
-11. Use `/financial-dashboard` to track profit, COGS, and export financial reports.
-12. Enable COD and edit township delivery fees in `/store-settings`.
+6. Create products in `/products/add`:
+   - Choose between traditional Size/Color variants or **Dynamic Custom Attributes**
+   - For custom attributes: define attribute names (e.g., "အလေးချိန်", "Volume") and values (e.g., "1 Kg, 5 Kg")
+   - The system auto-generates all variant combinations in a table
+   - Set selling price, stock quantity, and cost price (COGS) for each variant
+7. Manage suppliers and create purchase orders in `/purchase-orders/create`:
+   - Register suppliers with contact details
+   - Select supplier, product, and variant
+   - Enter quantity and unit cost
+   - System automatically updates stock and calculates moving average COGS
+8. Share the generated product link, usually `/order/:slug`.
+9. Manage incoming orders in `/orders`.
+10. Use `/orders/processing` to batch process orders, generate packing slips, and print address labels.
+11. Use `/discounts` for coupon codes and `/product-traffic` for view analytics.
+12. Use `/financial-dashboard` to track profit, COGS, and export financial reports.
+13. Enable COD and edit township delivery fees in `/store-settings`.
 
 ### Buyer Flow
 
 1. Open a product link at `/order/:slug`.
-2. Choose variant and quantity.
+2. Choose variant and quantity:
+   - For products with custom attributes: select from dynamic attribute labels (e.g., weight, flavor)
+   - Price and stock update in real-time based on selection
+   - For traditional products: select Size and/or Color
 3. Continue to checkout.
 4. Select prepaid payment or COD if the seller allows it.
 5. Choose region and township so the delivery fee is added automatically.
@@ -193,7 +248,7 @@ npm run preview
 
 - `/dashboard` - Seller dashboard
 - `/products` - Product list
-- `/products/add` - Add product
+- `/products/add` - Add product (with Dynamic Custom Attributes support)
 - `/products/edit/:productId` - Edit product
 - `/discounts` - Coupon and discount management
 - `/product-traffic` - Product view analytics
@@ -201,6 +256,7 @@ npm run preview
 - `/orders` - Order list
 - `/orders/processing` - Order batch processing with packing slips and address labels
 - `/orders/:orderId` - Order detail
+- `/purchase-orders/create` - Create purchase orders for stock intake with supplier management
 - `/notifications` - Notifications
 - `/store-settings` - Store settings
 - `/profile-settings` - Seller profile settings
@@ -224,7 +280,8 @@ The app uses Turso / LibSQL. Main data models include:
 - Wallets
 - Products
 - Product images
-- Product variants
+- Product variants (with custom attributes support via `attributes_json` field)
+- **Product attributes** (custom attribute definitions for dynamic variants)
 - Orders
 - Coupon codes
 - Page views
@@ -235,6 +292,8 @@ The app uses Turso / LibSQL. Main data models include:
 - Subscription payment logs
 - Devices
 - Device usage
+- **Suppliers** (supplier directory for purchase orders)
+- **Purchase orders** (stock intake with moving average COGS calculation)
 
 Schema reference and TypeScript interfaces live in `src/lib/schema.ts`. Database helper functions live in `src/lib/db.ts`.
 

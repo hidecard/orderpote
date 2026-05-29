@@ -19,6 +19,7 @@ import EditProductForm from './components/products/EditProductForm';
 import OrderList from './components/orders/OrderList';
 import OrderDetail from './components/orders/OrderDetail';
 import OrderBatchProcessing from './components/orders/OrderBatchProcessing';
+import PurchaseOrderIntake from './components/inventory/PurchaseOrderIntake';
 import StoreApproval from './components/admin/StoreApproval';
 import SellerManagement from './components/admin/SellerManagement';
 import PlanManagement from './components/admin/PlanManagement';
@@ -406,6 +407,21 @@ function App() {
               {
                 title: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း | OrderPote',
                 description: 'OrderPote တွင် ပို့ဆောင်ရန် အသင့်ဖြစ်နေသော အော်ဒါများကို အုပ်စ်ဖွဲ့ပြီး ထုပ်ပိုးမှုအစီရင်ခံစာနှင့် လိပ်စာကတ်များ ထုတ်ယူပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/purchase-orders/create"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Purchase Order Intake">
+                  <PurchaseOrderIntake />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'Purchase Order အသစ်ဆောက်ရန် | OrderPote',
+                description: 'OrderPote တွင် ဆိုင်ထဲသို့ Stock အသစ်သွင်းရန် Purchase Order ဖန်တီးပါ။',
                 noIndex: true,
               }
             )}

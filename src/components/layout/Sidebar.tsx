@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Smartphone, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Smartphone, TrendingUp, Truck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../lib/admin';
 import { getUnreadNotificationCount } from '../../lib/db';
@@ -44,6 +44,7 @@ export default function Sidebar() {
         { icon: TrendingUp, label: 'ငွေကြေး ဒက်ရှ်ဘုတ်', path: '/financial-dashboard' },
         { icon: ShoppingCart, label: 'အော်ဒါများ', path: '/orders' },
         { icon: Package, label: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း', path: '/orders/processing' },
+        { icon: Truck, label: 'Purchase Order သွင်းရန်', path: '/purchase-orders/create' },
         { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
         { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings' },
         { icon: Smartphone, label: 'ကိရိယာစီမံခန့်ခွဲမှု', path: '/device-management' },
