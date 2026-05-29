@@ -4,7 +4,7 @@ import { Banknote, Copy, CreditCard, Upload, X, CheckCircle } from 'lucide-react
 import { MYANMAR_REGIONS, TOWNSHIPS_BY_REGION } from '../../lib/myanmar-data';
 import { getDeliveryFeeForTownship, parseDeliveryFees } from '../../lib/delivery-fees';
 import type { Product, ProductVariant, Wallet, Store } from '../../lib/schema';
-import { getProductBySlug, getProductVariants, getPrimaryWallet, getStoreByUserId, createOrder, validateCouponCode } from '../../lib/db';
+import { getProductBySlug, getProductVariants, getWalletsByUserId, getStoreByUserId, createOrder, validateCouponCode } from '../../lib/db';
 
 interface CheckoutFormProps {
   productSlug: string;
@@ -19,7 +19,7 @@ function isEnabledFlag(value: unknown): boolean {
 export default function CheckoutForm({ productSlug, variantId, quantity }: CheckoutFormProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [variant, setVariant] = useState<ProductVariant | null>(null);
-  const [primaryWallet, setPrimaryWallet] = useState<Wallet | null>(null);
+  const [selectedWallets, setSelectedWallets] = useState<Wallet[]>([]);
   const [store, setStore] = useState<Store | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -47,13 +47,14 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
         const variantsData = await getProductVariants(productData.id);
         const variantData = variantsData.find(v => v.id === variantId) || variantsData[0];
         
-        const walletData = await getPrimaryWallet(productData.user_id);
+        const allWallets = await getWalletsByUserId(productData.user_id);
+        const selectedWalletData = allWallets.filter(w => w.is_primary);
         const storeData = await getStoreByUserId(productData.user_id);
         setProduct(productData);
         setVariant(variantData || null);
-        setPrimaryWallet(walletData);
+        setSelectedWallets(selectedWalletData);
         setStore(storeData);
-        if (!walletData && isEnabledFlag(storeData?.cod_enabled)) {
+        if (selectedWalletData.length === 0 && isEnabledFlag(storeData?.cod_enabled)) {
           setPaymentMethod('cod');
         }
       } catch (error) {
@@ -66,12 +67,10 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     fetchCheckoutData();
   }, [productSlug, variantId]);
 
-  const handleCopyAccountNumber = () => {
-    if (primaryWallet) {
-      navigator.clipboard.writeText(primaryWallet.account_number);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+  const handleCopyAccountNumber = (accountNumber: string) => {
+    navigator.clipboard.writeText(accountNumber);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
@@ -162,7 +161,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
       return;
     }
 
-    if (paymentMethod === 'prepaid' && !primaryWallet) {
+    if (paymentMethod === 'prepaid' && selectedWallets.length === 0) {
       alert('Seller has not set up a payment wallet yet');
       return;
     }
@@ -252,7 +251,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
     );
   }
 
-  if (!primaryWallet && !isEnabledFlag(store?.cod_enabled)) {
+  if (selectedWallets.length === 0 && !isEnabledFlag(store?.cod_enabled)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-md p-6 max-w-md text-center">
@@ -341,7 +340,7 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('prepaid')}
-                    disabled={!primaryWallet}
+                    disabled={selectedWallets.length === 0}
                     className={`flex items-center gap-3 rounded-3xl border p-4 text-left transition-colors ${
                       paymentMethod === 'prepaid'
                         ? 'border-[#1a7f8c] bg-[#f0fbfd] text-[#1a7f8c]'
@@ -377,33 +376,35 @@ export default function CheckoutForm({ productSlug, variantId, quantity }: Check
                   </button>
                 </div>
 
-                {paymentMethod === 'prepaid' && primaryWallet ? (
+                {paymentMethod === 'prepaid' && selectedWallets.length > 0 ? (
                   <div className="rounded-3xl bg-[#f0fbfd] p-4 border border-[#d4f1f5]">
-                  <div className="flex items-center justify-between gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-500">ဘဏ်အမည်</p>
-                      <p className="font-semibold text-gray-900">{primaryWallet.account_name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">အကောင့်နံပါတ်</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900">{primaryWallet.account_number}</p>
-                        <button
-                          onClick={handleCopyAccountNumber}
-                          className="rounded-full bg-[#1a7f8c] p-2 text-white hover:bg-[#156a75] transition-colors"
-                        >
-                          {copied ? (
-                            <CheckCircle className="w-4 h-4" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </button>
+                  <p className="text-sm text-gray-600 mb-4">အောက်ပါ ဘဏ်အကောင့်များမှ တစ်ခုကို ရွေးပြီး {finalPrice.toLocaleString()} Ks လွှဲပါ။</p>
+                  <div className="space-y-3">
+                    {selectedWallets.map((wallet) => (
+                      <div key={wallet.id} className="flex items-center justify-between gap-4 p-3 bg-white rounded-lg border border-gray-200">
+                        <div>
+                          <p className="text-sm text-gray-500">{wallet.provider}</p>
+                          <p className="font-semibold text-gray-900">{wallet.account_name}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">အကောင့်နံပါတ်</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-900">{wallet.account_number}</p>
+                            <button
+                              onClick={() => handleCopyAccountNumber(wallet.account_number)}
+                              className="rounded-full bg-[#1a7f8c] p-2 text-white hover:bg-[#156a75] transition-colors"
+                            >
+                              {copied ? (
+                                <CheckCircle className="w-4 h-4" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {primaryWallet.provider} မှဖြင့် {finalPrice.toLocaleString()} Ks ကို ငွေလွှဲပါ။
-                  </p>
                 </div>
                 ) : (
                   <div className="rounded-3xl bg-[#fff8ed] p-4 border border-[#f5dfb8]">

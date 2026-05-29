@@ -149,6 +149,32 @@ CREATE TABLE IF NOT EXISTS purchase_orders (
   FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
 
+-- Staff roles (role definitions)
+CREATE TABLE IF NOT EXISTS staff_roles (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE, -- 'admin', 'packer', 'customer_service', 'manager'
+  display_name TEXT NOT NULL, -- 'Admin', 'Packer', 'Customer Service', 'Manager'
+  description TEXT,
+  permissions TEXT NOT NULL, -- JSON array of permissions, e.g., ["orders.view", "orders.process", "products.view"]
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Staff accounts (store staff members)
+CREATE TABLE IF NOT EXISTS staff_accounts (
+  id TEXT PRIMARY KEY,
+  store_id TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  phone TEXT,
+  is_active INTEGER DEFAULT 1, -- 0 = inactive, 1 = active
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES staff_roles(id) ON DELETE CASCADE
+);
+
 -- Recommended products
 CREATE TABLE IF NOT EXISTS recommended_products (
   id TEXT PRIMARY KEY,
@@ -446,6 +472,28 @@ export interface PurchaseOrder {
   total_cost: number;
   status: 'received' | 'pending';
   notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StaffRole {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  permissions: string[];
+  created_at: string;
+}
+
+export interface StaffAccount {
+  id: string;
+  store_id: string;
+  role_id: string;
+  name: string;
+  email: string;
+  password_hash: string;
+  phone?: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

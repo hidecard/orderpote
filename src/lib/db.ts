@@ -1,5 +1,5 @@
 import turso from './turso';
-import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog, Device, DeviceUsage, Supplier, PurchaseOrder, ProductAttribute } from './schema';
+import type { CouponCode, Product, ProductVariant, ProductImage, Review, Order, Wallet, User, Store, Notification, Plan, Subscription, SubscriptionWithPlan, SubscriptionPaymentLog, Device, DeviceUsage, Supplier, PurchaseOrder, ProductAttribute, StaffRole, StaffAccount } from './schema';
 
 const rowAs = <T>(row: unknown): T => row as T;
 const rowsAs = <T>(rows: unknown): T[] => rows as T[];
@@ -230,7 +230,7 @@ async function ensureProductAttributesSchema(): Promise<void> {
       id TEXT PRIMARY KEY,
       product_id TEXT NOT NULL,
       name TEXT NOT NULL,
-      values TEXT NOT NULL,
+      attribute_values TEXT NOT NULL,
       sort_order INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
@@ -1830,6 +1830,24 @@ export async function updateWalletPrimaryStatus(userId: string, walletId: string
   });
 }
 
+// Update multiple wallet selection status
+export async function updateWalletSelectionStatus(userId: string, walletIds: string[]): Promise<void> {
+  // Set all wallets to non-selected first
+  await turso.execute({
+    sql: 'UPDATE wallets SET is_primary = 0 WHERE user_id = ?',
+    args: [userId],
+  });
+  
+  // Set the selected wallets as primary
+  if (walletIds.length > 0) {
+    const placeholders = walletIds.map(() => '?').join(',');
+    await turso.execute({
+      sql: `UPDATE wallets SET is_primary = 1 WHERE id IN (${placeholders})`,
+      args: walletIds,
+    });
+  }
+}
+
 // Delete wallet
 export async function deleteWallet(walletId: string): Promise<void> {
   await turso.execute({
@@ -2316,4 +2334,318 @@ export async function calculateProfitLoss(storeId: string, startDate: string, en
     netProfit,
     orderCount,
   };
+}
+
+let staffRolesSchemaEnsured = false;
+async function ensureStaffRolesSchema(): Promise<void> {
+  if (staffRolesSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS staff_roles (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      description TEXT,
+      permissions TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+  });
+
+  const existingRoles = await turso.execute({ sql: 'SELECT COUNT(*) as count FROM staff_roles' });
+  const count = Number(existingRoles.rows[0].count);
+  
+  if (count === 0) {
+    const now = new Date().toISOString();
+    await turso.execute({
+      sql: `INSERT INTO staff_roles (id, name, display_name, description, permissions, created_at) VALUES 
+        ('role-admin', 'admin', 'Admin', 'Full access to all features', ?, ?),
+        ('role-manager', 'manager', 'Manager', 'Can manage products, orders, and view financial data', ?, ?),
+        ('role-packer', 'packer', 'Packer', 'Can view and process orders only', ?, ?),
+        ('role-cs', 'customer_service', 'Customer Service', 'Can view orders and communicate with customers', ?, ?)`,
+      args: [
+        JSON.stringify(['*']), now,
+        JSON.stringify(['products.view', 'products.edit', 'orders.view', 'orders.process', 'orders.update_status', 'suppliers.view', 'purchase_orders.create', 'financial_dashboard.view']), now,
+        JSON.stringify(['orders.view', 'orders.process']), now,
+        JSON.stringify(['orders.view', 'orders.update_status']), now,
+      ],
+    });
+  }
+
+  staffRolesSchemaEnsured = true;
+}
+
+let staffAccountsSchemaEnsured = false;
+async function ensureStaffAccountsSchema(): Promise<void> {
+  if (staffAccountsSchemaEnsured) return;
+
+  await turso.execute({
+    sql: `CREATE TABLE IF NOT EXISTS staff_accounts (
+      id TEXT PRIMARY KEY,
+      store_id TEXT NOT NULL,
+      role_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      phone TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+      FOREIGN KEY (role_id) REFERENCES staff_roles(id) ON DELETE CASCADE
+    )`,
+  });
+
+  staffAccountsSchemaEnsured = true;
+}
+
+// Staff Roles functions
+export async function getStaffRoles(): Promise<StaffRole[]> {
+  await ensureStaffRolesSchema();
+  const result = await turso.execute({ sql: 'SELECT * FROM staff_roles ORDER BY name ASC' });
+  return result.rows.map(row => ({
+    id: String(row.id),
+    name: String(row.name),
+    display_name: String(row.display_name),
+    description: row.description ? String(row.description) : undefined,
+    permissions: JSON.parse(String(row.permissions)),
+    created_at: String(row.created_at),
+  }));
+}
+
+export async function getStaffRoleById(roleId: string): Promise<StaffRole | null> {
+  await ensureStaffRolesSchema();
+  const result = await turso.execute({ sql: 'SELECT * FROM staff_roles WHERE id = ?', args: [roleId] });
+  if (result.rows.length === 0) return null;
+  const row = result.rows[0];
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    display_name: String(row.display_name),
+    description: row.description ? String(row.description) : undefined,
+    permissions: JSON.parse(String(row.permissions)),
+    created_at: String(row.created_at),
+  };
+}
+
+export async function createStaffRole(role: Omit<StaffRole, 'id' | 'created_at'>): Promise<StaffRole> {
+  await ensureStaffRolesSchema();
+  
+  const id = generateId();
+  const now = new Date().toISOString();
+  
+  await turso.execute({
+    sql: 'INSERT INTO staff_roles (id, name, display_name, description, permissions, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      role.name,
+      role.display_name,
+      role.description || null,
+      JSON.stringify(role.permissions),
+      now,
+    ],
+  });
+  
+  return { ...role, id, created_at: now };
+}
+
+export async function updateStaffRole(roleId: string, updates: Partial<Omit<StaffRole, 'id' | 'created_at'>>): Promise<void> {
+  await ensureStaffRolesSchema();
+  
+  const updateFields: string[] = [];
+  const args: any[] = [];
+  
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.display_name !== undefined) {
+    updateFields.push('display_name = ?');
+    args.push(updates.display_name);
+  }
+  if (updates.description !== undefined) {
+    updateFields.push('description = ?');
+    args.push(updates.description);
+  }
+  if (updates.permissions !== undefined) {
+    updateFields.push('permissions = ?');
+    args.push(JSON.stringify(updates.permissions));
+  }
+  
+  if (updateFields.length > 0) {
+    args.push(roleId);
+    await turso.execute({
+      sql: `UPDATE staff_roles SET ${updateFields.join(', ')} WHERE id = ?`,
+      args,
+    });
+  }
+}
+
+export async function deleteStaffRole(roleId: string): Promise<void> {
+  await ensureStaffRolesSchema();
+  await turso.execute({ sql: 'DELETE FROM staff_roles WHERE id = ?', args: [roleId] });
+}
+
+// Staff Accounts functions
+export async function getStaffAccountsByStoreId(storeId: string): Promise<(StaffAccount & { role_name: string; role_display_name: string })[]> {
+  await ensureStaffAccountsSchema();
+  const result = await turso.execute({
+    sql: `
+      SELECT sa.*, sr.name as role_name, sr.display_name as role_display_name
+      FROM staff_accounts sa
+      INNER JOIN staff_roles sr ON sa.role_id = sr.id
+      WHERE sa.store_id = ?
+      ORDER BY sa.created_at DESC
+    `,
+    args: [storeId],
+  });
+  return result.rows.map(row => ({
+    id: String(row.id),
+    store_id: String(row.store_id),
+    role_id: String(row.role_id),
+    name: String(row.name),
+    email: String(row.email),
+    password_hash: String(row.password_hash),
+    phone: row.phone ? String(row.phone) : undefined,
+    is_active: Boolean(row.is_active),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+    role_name: String(row.role_name),
+    role_display_name: String(row.role_display_name),
+  }));
+}
+
+export async function createStaffAccount(staff: Omit<StaffAccount, 'id' | 'password_hash' | 'created_at' | 'updated_at'>, password: string): Promise<StaffAccount> {
+  await ensureStaffAccountsSchema();
+  
+  const bcrypt = await import('bcryptjs');
+  const password_hash = await bcrypt.hash(password, 10);
+  
+  const id = generateId();
+  const now = new Date().toISOString();
+  
+  await turso.execute({
+    sql: 'INSERT INTO staff_accounts (id, store_id, role_id, name, email, password_hash, phone, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [
+      id,
+      staff.store_id,
+      staff.role_id,
+      staff.name,
+      staff.email,
+      password_hash,
+      staff.phone || null,
+      staff.is_active ? 1 : 0,
+      now,
+      now,
+    ],
+  });
+  
+  return { ...staff, id, password_hash, created_at: now, updated_at: now };
+}
+
+export async function updateStaffAccount(staffId: string, updates: Partial<Omit<StaffAccount, 'id' | 'store_id' | 'created_at'>>): Promise<void> {
+  await ensureStaffAccountsSchema();
+  
+  const updateFields: string[] = [];
+  const args: any[] = [];
+  
+  if (updates.name !== undefined) {
+    updateFields.push('name = ?');
+    args.push(updates.name);
+  }
+  if (updates.email !== undefined) {
+    updateFields.push('email = ?');
+    args.push(updates.email);
+  }
+  if (updates.phone !== undefined) {
+    updateFields.push('phone = ?');
+    args.push(updates.phone);
+  }
+  if (updates.is_active !== undefined) {
+    updateFields.push('is_active = ?');
+    args.push(updates.is_active ? 1 : 0);
+  }
+  if (updates.role_id !== undefined) {
+    updateFields.push('role_id = ?');
+    args.push(updates.role_id);
+  }
+  
+  updateFields.push('updated_at = ?');
+  args.push(new Date().toISOString());
+  args.push(staffId);
+  
+  if (updateFields.length > 1) {
+    await turso.execute({
+      sql: `UPDATE staff_accounts SET ${updateFields.join(', ')} WHERE id = ?`,
+      args,
+    });
+  }
+}
+
+export async function deleteStaffAccount(staffId: string): Promise<void> {
+  await ensureStaffAccountsSchema();
+  await turso.execute({ sql: 'DELETE FROM staff_accounts WHERE id = ?', args: [staffId] });
+}
+
+export async function authenticateStaffAccount(email: string, password: string): Promise<StaffAccount & { role: StaffRole } | null> {
+  await ensureStaffAccountsSchema();
+  
+  console.log('Looking up staff account for email:', email);
+  const result = await turso.execute({
+    sql: `SELECT sa.id, sa.store_id, sa.role_id, sa.name, sa.email, sa.password_hash, sa.phone, sa.is_active, sa.created_at, sa.updated_at,
+           sr.id as role_id_2, sr.name as role_name, sr.display_name as role_display_name, sr.description as role_description, sr.permissions as role_permissions, sr.created_at as role_created_at
+           FROM staff_accounts sa 
+           INNER JOIN staff_roles sr ON sa.role_id = sr.id 
+           WHERE sa.email = ? AND sa.is_active = 1`,
+    args: [email],
+  });
+  
+  console.log('Query result rows:', result.rows.length);
+  if (result.rows.length === 0) {
+    console.log('No staff account found or inactive');
+    return null;
+  }
+  
+  const row = result.rows[0];
+  console.log('Staff account found, verifying password');
+  const bcrypt = await import('bcryptjs');
+  const isValid = await bcrypt.compare(password, String(row.password_hash));
+  console.log('Password valid:', isValid);
+  
+  if (!isValid) return null;
+  
+  const staffAccount = {
+    id: String(row.id),
+    store_id: String(row.store_id),
+    role_id: String(row.role_id),
+    name: String(row.name),
+    email: String(row.email),
+    password_hash: String(row.password_hash),
+    phone: row.phone ? String(row.phone) : undefined,
+    is_active: Boolean(row.is_active),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+    role: {
+      id: String(row.role_id_2),
+      name: String(row.role_name),
+      display_name: String(row.role_display_name),
+      description: row.role_description ? String(row.role_description) : undefined,
+      permissions: row.role_permissions ? JSON.parse(String(row.role_permissions)) : [],
+      created_at: String(row.role_created_at),
+    },
+  };
+  
+  console.log('Returning staff account:', staffAccount);
+  return staffAccount;
+}
+
+export async function updateStaffPassword(staffId: string, newPassword: string): Promise<void> {
+  await ensureStaffAccountsSchema();
+  
+  const bcrypt = await import('bcryptjs');
+  const password_hash = await bcrypt.hash(newPassword, 10);
+  
+  await turso.execute({
+    sql: 'UPDATE staff_accounts SET password_hash = ?, updated_at = ? WHERE id = ?',
+    args: [password_hash, new Date().toISOString(), staffId],
+  });
 }

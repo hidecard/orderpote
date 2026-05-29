@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Package } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffAuth } from '../../context/StaffAuthContext';
 import { getStoreByUserId, calculateProfitLoss } from '../../lib/db';
 
 interface ProfitLossData {
@@ -11,18 +12,29 @@ interface ProfitLossData {
   orderCount: number;
 }
 
-export default function ProfitLossAnalytics() {
+interface ProfitLossAnalyticsProps {
+  sellerId?: string;
+}
+
+export default function ProfitLossAnalytics({ sellerId: propSellerId }: ProfitLossAnalyticsProps) {
   const { user } = useAuth();
+  const { staff } = useStaffAuth();
   const [period, setPeriod] = useState<'today' | 'week' | 'month'>('month');
   const [data, setData] = useState<ProfitLossData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProfitLoss() {
-      if (!user) return;
+      // Get the seller ID from prop, user, or staff
+      const sellerId = propSellerId || (user ? user.id : (staff ? staff.store_id : null));
+      
+      if (!sellerId) {
+        setIsLoading(false);
+        return;
+      }
       
       try {
-        const store = await getStoreByUserId(user.id);
+        const store = await getStoreByUserId(sellerId);
         if (!store) return;
 
         const now = new Date();
@@ -50,7 +62,7 @@ export default function ProfitLossAnalytics() {
     }
 
     fetchProfitLoss();
-  }, [user, period]);
+  }, [user, staff, period, propSellerId]);
 
   if (isLoading || !data) {
     return null;

@@ -1,5 +1,6 @@
-import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Smartphone, TrendingUp, Truck } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Wallet, LogOut, ShieldCheck, Store as StoreIcon, Bell, BarChart, CreditCard, Tag, User, Smartphone, TrendingUp, Truck, Users, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffAuth } from '../../context/StaffAuthContext';
 import { isAdminUser } from '../../lib/admin';
 import { getUnreadNotificationCount } from '../../lib/db';
 import { useState, useEffect } from 'react';
@@ -7,9 +8,14 @@ import { Link, useLocation } from 'react-router-dom';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { staff, logout: staffLogout, hasPermission } = useStaffAuth();
   const location = useLocation();
   const isAdmin = isAdminUser(user);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  console.log('Sidebar - user:', user);
+  console.log('Sidebar - staff:', staff);
+  console.log('Sidebar - isAdmin:', isAdmin);
 
   useEffect(() => {
     async function fetchUnreadCount() {
@@ -28,29 +34,44 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const menuItems = isAdmin
+  const allMenuItems = isAdmin
     ? [
-        { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
-        { icon: ShieldCheck, label: 'ဆိုင်ခွင့်အတည်ပြုမှုများ', path: '/admin/store-approvals' },
-        { icon: Package, label: 'ရောင်းချသူများစီမံခန့်ခွဲမှု', path: '/admin/sellers' },
-        { icon: CreditCard, label: 'အစီအစဉ်များစီမံခန့်ခွဲမှု', path: '/admin/plans' },
-        { icon: User, label: 'Admin ပရိုဖိုင်', path: '/admin/profile' },
+        { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications', permission: null },
+        { icon: ShieldCheck, label: 'ဆိုင်ခွင့်အတည်ပြုမှုများ', path: '/admin/store-approvals', permission: null },
+        { icon: Package, label: 'ရောင်းချသူများစီမံခန့်ခွဲမှု', path: '/admin/sellers', permission: null },
+        { icon: CreditCard, label: 'အစီအစဉ်များစီမံခန့်ခွဲမှု', path: '/admin/plans', permission: null },
+        { icon: User, label: 'Admin ပရိုဖိုင်', path: '/admin/profile', permission: null },
       ]
     : [
-        { icon: LayoutDashboard, label: 'ဒက်ရှ်ဘုတ်', path: '/dashboard' },
-        { icon: Package, label: 'ပစ္စည်းများ', path: '/products' },
-        { icon: Tag, label: 'လျှော့ဈေးများ', path: '/discounts' },
-        { icon: BarChart, label: 'ပစ္စည်းလာရောက်မှု', path: '/product-traffic' },
-        { icon: TrendingUp, label: 'ငွေကြေး ဒက်ရှ်ဘုတ်', path: '/financial-dashboard' },
-        { icon: ShoppingCart, label: 'အော်ဒါများ', path: '/orders' },
-        { icon: Package, label: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း', path: '/orders/processing' },
-        { icon: Truck, label: 'Purchase Order သွင်းရန်', path: '/purchase-orders/create' },
-        { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications' },
-        { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings' },
-        { icon: Smartphone, label: 'ကိရိယာစီမံခန့်ခွဲမှု', path: '/device-management' },
-        { icon: User, label: 'ပရိုဖိုင်ဆက်တင်များ', path: '/profile-settings' },
-        { icon: Wallet, label: 'ငွေပေးချေမှုအိတ်', path: '/wallet-setup' },
+        { icon: LayoutDashboard, label: 'ဒက်ရှ်ဘုတ်', path: '/dashboard', permission: null },
+        { icon: Package, label: 'ပစ္စည်းများ', path: '/products', permission: 'products.view' },
+        { icon: Tag, label: 'လျှော့ဈေးများ', path: '/discounts', permission: null },
+        { icon: BarChart, label: 'ပစ္စည်းလာရောက်မှု', path: '/product-traffic', permission: null },
+        { icon: TrendingUp, label: 'ငွေကြေး ဒက်ရှ်ဘုတ်', path: '/financial-dashboard', permission: 'financial_dashboard.view' },
+        { icon: ShoppingCart, label: 'အော်ဒါများ', path: '/orders', permission: 'orders.view' },
+        { icon: Package, label: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း', path: '/orders/processing', permission: 'orders.process' },
+        { icon: Truck, label: 'Purchase Order သွင်းရန်', path: '/purchase-orders/create', permission: 'purchase_orders.create' },
+        { icon: Users, label: 'ဝန်ထမ်း စီမံခန့်ခွဲမှု', path: '/staff-management', permission: 'staff.view' },
+        { icon: Shield, label: 'တာဝန် စီမံခန့်ခွဲမှု', path: '/role-management', permission: null },
+        { icon: Bell, label: 'အကြောင်းကြားချက်များ', path: '/notifications', permission: null },
+        { icon: StoreIcon, label: 'ဆိုင်ဆက်တင်များ', path: '/store-settings', permission: null },
+        { icon: Smartphone, label: 'ကိရိယာစီမံခန့်ခွဲမှု', path: '/device-management', permission: null },
+        { icon: User, label: 'ပရိုဖိုင်ဆက်တင်များ', path: '/profile-settings', permission: null },
+        { icon: Wallet, label: 'ငွေပေးချေမှုအိတ်', path: '/wallet-setup', permission: null },
       ];
+
+  // Filter menu items based on staff permissions
+  const menuItems = staff
+    ? allMenuItems.filter(item => {
+        // Staff can only access items with explicit permissions they have
+        // Items with permission=null are seller-only
+        const hasAccess = item.permission && hasPermission(item.permission);
+        console.log(`Menu item ${item.label}: permission=${item.permission}, hasAccess=${hasAccess}`);
+        return hasAccess;
+      })
+    : allMenuItems;
+  
+  console.log('Filtered menu items:', menuItems.map(item => item.label));
 
   return (
     <aside className="relative flex w-full max-w-xs min-h-0 flex-col border-r border-gray-200 bg-white p-4 md:h-screen md:w-64 md:sticky md:top-0 md:self-start">
@@ -85,17 +106,17 @@ export default function Sidebar() {
 
       <div className="mt-6 pt-6 border-t border-gray-200">
         <button
-          onClick={logout}
+          onClick={staff ? staffLogout : logout}
           className="flex w-full items-center justify-center gap-3 rounded-lg bg-red-50 px-4 py-3 text-red-600 transition-colors hover:bg-red-100"
         >
           <LogOut className="w-5 h-5" />
           <span>အကောင့်ထွက်မည်</span>
         </button>
 
-        {user && (
+        {(user || staff) && (
           <div className="mt-4 space-y-1 text-center text-sm text-gray-600">
-            <p className="font-medium text-gray-800">{user.name}</p>
-            <p className="text-xs text-gray-500">{user.phone}</p>
+            <p className="font-medium text-gray-800">{user ? user.name : staff?.name}</p>
+            <p className="text-xs text-gray-500">{user ? user.phone : staff?.role.display_name}</p>
           </div>
         )}
       </div>

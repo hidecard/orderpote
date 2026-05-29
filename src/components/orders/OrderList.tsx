@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, Download, Image as ImageIcon, Search, Truck } from 'lucide-react';
 import type { Order } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffAuth } from '../../context/StaffAuthContext';
 import { getOrdersBySellerId, updateOrderDeliveryStatus, updateOrderPaymentStatus } from '../../lib/db';
 
 type PaymentFilter = 'all' | 'pending' | 'paid' | 'failed';
@@ -9,6 +10,7 @@ type DeliveryFilter = 'all' | 'pending' | 'preparing' | 'shipped' | 'delivered';
 
 export default function OrderList() {
   const { user } = useAuth();
+  const { staff } = useStaffAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPayment, setFilterPayment] = useState<PaymentFilter>('all');
@@ -21,13 +23,16 @@ export default function OrderList() {
     let isMounted = true;
 
     async function fetchOrders() {
-      if (!user) {
+      // Get the seller ID from either user or staff
+      const sellerId = user ? user.id : (staff ? staff.store_id : null);
+      
+      if (!sellerId) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const orderData = await getOrdersBySellerId(user.id);
+        const orderData = await getOrdersBySellerId(sellerId);
         if (isMounted) setOrders(orderData);
       } catch (error) {
         console.error('Error fetching seller orders:', error);
@@ -41,7 +46,7 @@ export default function OrderList() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, staff]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Link as LinkIcon, Package, Plus, Search, Trash2, Edit } from 'lucide-react';
 import type { Product } from '../../lib/schema';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffAuth } from '../../context/StaffAuthContext';
 import { deleteProduct, getProductsByUserId, updateProductActiveStatus } from '../../lib/db';
 
 type ProductStatusFilter = 'all' | 'active' | 'inactive';
 
 export default function ProductList() {
   const { user } = useAuth();
+  const { staff } = useStaffAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<ProductStatusFilter>('all');
@@ -17,13 +19,16 @@ export default function ProductList() {
     let isMounted = true;
 
     async function fetchProducts() {
-      if (!user) {
+      // Get the seller ID from either user or staff
+      const sellerId = user ? user.id : (staff ? staff.store_id : null);
+      
+      if (!sellerId) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const productData = await getProductsByUserId(user.id);
+        const productData = await getProductsByUserId(sellerId);
         if (isMounted) setProducts(productData);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -37,7 +42,7 @@ export default function ProductList() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, staff]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Navigate, Routes, Route, useParams } from 'rea
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { StaffAuthProvider } from './context/StaffAuthContext';
 import { useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import RegisterForm from './components/auth/RegisterForm';
@@ -9,10 +10,14 @@ import LoginForm from './components/auth/LoginForm';
 import WalletSetup from './components/auth/WalletSetup';
 import BecomeSeller from './components/auth/BecomeSeller';
 import SellerPending from './components/auth/SellerPending';
+import StaffLogin from './components/auth/StaffLogin';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Dashboard from './components/dashboard/Dashboard';
 import Discounts from './components/dashboard/Discounts';
 import FinancialDashboard from './components/dashboard/FinancialDashboard';
+import StaffManagement from './components/dashboard/StaffManagement';
+import RoleManagement from './components/dashboard/RoleManagement';
+import StaffDashboard from './components/dashboard/StaffDashboard';
 import ProductList from './components/products/ProductList';
 import AddProductForm from './components/products/AddProductForm';
 import EditProductForm from './components/products/EditProductForm';
@@ -23,6 +28,7 @@ import PurchaseOrderIntake from './components/inventory/PurchaseOrderIntake';
 import StoreApproval from './components/admin/StoreApproval';
 import SellerManagement from './components/admin/SellerManagement';
 import PlanManagement from './components/admin/PlanManagement';
+import HybridAccessGate from './components/auth/HybridAccessGate';
 import NotificationsPage from './components/notifications/NotificationsPage';
 import ProductTrafficPage from './pages/ProductTraffic';
 import ProductLandingPage from './components/buyer/ProductLandingPage';
@@ -163,8 +169,9 @@ function OrderTrackingWrapper() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <StaffAuthProvider>
+        <Router>
+          <Routes>
           {/* Public Routes */}
           <Route
             path="/"
@@ -188,6 +195,22 @@ function App() {
               noIndex: true,
             })}
           />
+          <Route
+            path="/staff/login"
+            element={withSeo(<StaffLogin />, {
+              title: 'ဝန်ထမ်း ဝင်ရောက်ရန် | OrderPote',
+              description: 'OrderPote ဝန်ထမ်း Dashboard သို့ ဝင်ရောက်ပါ။',
+              noIndex: true,
+            })}
+          />
+          <Route
+            path="/staff/dashboard"
+            element={withSeo(<StaffDashboard />, {
+              title: 'ဝန်ထမ်း Dashboard | OrderPote',
+              description: 'OrderPote ဝန်ထမ်း Dashboard',
+              noIndex: true,
+            })}
+          />
           
           {/* Onboarding */}
           <Route
@@ -207,11 +230,18 @@ function App() {
           />
           <Route
             path="/wallet-setup"
-            element={withSeo(<WalletSetup />, {
-              title: 'Wallet တည်ဆောက်ရန် | OrderPote',
-              description: 'OrderPote ငွေပေးချေမှုများ လက်ခံရန် Mobile Wallet အချက်အလက်များ ထည့်ပါ။',
-              noIndex: true,
-            })}
+            element={withSeo(
+              <HybridAccessGate>
+                <DashboardLayout title="Wallet တည်ဆောက်ရန်">
+                  <WalletSetup />
+                </DashboardLayout>
+              </HybridAccessGate>,
+              {
+                title: 'Wallet တည်ဆောက်ရန် | OrderPote',
+                description: 'OrderPote ငွေပေးချေမှုများ လက်ခံရန် Mobile Wallet အချက်အလက်များ ထည့်ပါ။',
+                noIndex: true,
+              }
+            )}
           />
           <Route path="/admin" element={<Navigate to="/admin/store-approvals" replace />} />
           <Route
@@ -279,11 +309,11 @@ function App() {
           <Route
             path="/dashboard"
             element={withSeo(
-              <SellerAccessGate>
+              <HybridAccessGate>
                 <DashboardLayout title="Dashboard">
                   <Dashboard />
                 </DashboardLayout>
-              </SellerAccessGate>,
+              </HybridAccessGate>,
               {
                 title: 'Dashboard | OrderPote',
                 description: 'OrderPote တွင် ရောင်းချသူစွမ်းဆောင်ရည်၊ ဝင်ငွေနှင့် အော်ဒါလှုပ်ရှားမှုများကို ကြည့်ရှုပါ။',
@@ -294,11 +324,11 @@ function App() {
           <Route
             path="/products"
             element={withSeo(
-              <SellerAccessGate>
+              <HybridAccessGate requiredPermissions={['products.view']}>
                 <DashboardLayout title="Products">
                   <ProductList />
                 </DashboardLayout>
-              </SellerAccessGate>,
+              </HybridAccessGate>,
               {
                 title: 'ပစ္စည်းများ | OrderPote',
                 description: 'သင့် OrderPote ဆိုင်အတွက် Product Link များဖန်တီးနှင့် စီမံခန့်ခွဲပါ။',
@@ -369,11 +399,11 @@ function App() {
           <Route
             path="/financial-dashboard"
             element={withSeo(
-              <SellerAccessGate>
+              <HybridAccessGate requiredPermissions={['financial_dashboard.view']}>
                 <DashboardLayout title="Financial Dashboard">
                   <FinancialDashboard />
                 </DashboardLayout>
-              </SellerAccessGate>,
+              </HybridAccessGate>,
               {
                 title: 'ငွေကြေး ဒက်ရှ်ဘုတ် | OrderPote',
                 description: 'OrderPote တွင် အမြတ်အမြတ်နှင့် ကုန်ကျစရိတ်များကို ကြည့်ရှုပါ။',
@@ -384,11 +414,11 @@ function App() {
           <Route
             path="/orders"
             element={withSeo(
-              <SellerAccessGate>
+              <HybridAccessGate requiredPermissions={['orders.view']}>
                 <DashboardLayout title="Orders">
                   <OrderList />
                 </DashboardLayout>
-              </SellerAccessGate>,
+              </HybridAccessGate>,
               {
                 title: 'အော်ဒါများ | OrderPote',
                 description: 'OrderPote တွင် ဖောက်သည်အော်ဒါများနှင့် ငွေပေးချေမှုစစ်ဆေးမှုများကို စီမံခန့်ခွဲပါ။',
@@ -399,11 +429,11 @@ function App() {
           <Route
             path="/orders/processing"
             element={withSeo(
-              <SellerAccessGate>
+              <HybridAccessGate requiredPermissions={['orders.process']}>
                 <DashboardLayout title="Order Batch Processing">
                   <OrderBatchProcessing />
                 </DashboardLayout>
-              </SellerAccessGate>,
+              </HybridAccessGate>,
               {
                 title: 'အော်ဒါ အုပ်စု ထုတ်လုပ်ခြင်း | OrderPote',
                 description: 'OrderPote တွင် ပို့ဆောင်ရန် အသင့်ဖြစ်နေသော အော်ဒါများကို အုပ်စ်ဖွဲ့ပြီး ထုပ်ပိုးမှုအစီရင်ခံစာနှင့် လိပ်စာကတ်များ ထုတ်ယူပါ။',
@@ -414,11 +444,11 @@ function App() {
           <Route
             path="/purchase-orders/create"
             element={withSeo(
-              <SellerAccessGate>
+              <HybridAccessGate requiredPermissions={['purchase_orders.create']}>
                 <DashboardLayout title="Purchase Order Intake">
                   <PurchaseOrderIntake />
                 </DashboardLayout>
-              </SellerAccessGate>,
+              </HybridAccessGate>,
               {
                 title: 'Purchase Order အသစ်ဆောက်ရန် | OrderPote',
                 description: 'OrderPote တွင် ဆိုင်ထဲသို့ Stock အသစ်သွင်းရန် Purchase Order ဖန်တီးပါ။',
@@ -501,6 +531,36 @@ function App() {
               }
             )}
           />
+          <Route
+            path="/staff-management"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Staff Management">
+                  <StaffManagement />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'ဝန်ထမ်း စီမံခန့်ခွဲမှု | OrderPote',
+                description: 'သင့် OrderPote ဆိုင်ဝန်ထမ်းများကို စီမံခန့်ခွဲပါ။',
+                noIndex: true,
+              }
+            )}
+          />
+          <Route
+            path="/role-management"
+            element={withSeo(
+              <SellerAccessGate>
+                <DashboardLayout title="Role Management">
+                  <RoleManagement />
+                </DashboardLayout>
+              </SellerAccessGate>,
+              {
+                title: 'တာဝန် စီမံခန့်ခွဲမှု | OrderPote',
+                description: 'သင့် OrderPote ဆိုင်တာဝန်များကို စီမံခန့်ခွဲပါ။',
+                noIndex: true,
+              }
+            )}
+          />
           
           {/* Buyer Routes */}
           <Route path="/order/:slug" element={<ProductLandingPageWrapper />} />
@@ -516,6 +576,7 @@ function App() {
           />
         </Routes>
       </Router>
+      </StaffAuthProvider>
     </AuthProvider>
   );
 }

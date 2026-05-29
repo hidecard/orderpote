@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, Trash2, Check, Star } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { Wallet } from '../../lib/schema';
-import { createWallet, getWalletsByUserId, updateWalletPrimaryStatus, deleteWallet } from '../../lib/db';
+import { createWallet, getWalletsByUserId, updateWalletSelectionStatus, deleteWallet } from '../../lib/db';
 
 const WALLET_PROVIDERS = [
   'KPay',
@@ -20,6 +20,7 @@ export default function WalletSetup() {
   const { user } = useAuth();
   const [savedWallets, setSavedWallets] = useState<Wallet[]>([]);
   const [wallets, setWallets] = useState<Partial<Wallet>[]>([]);
+  const [selectedWalletIds, setSelectedWalletIds] = useState<string[]>([]);
   const [currentWallet, setCurrentWallet] = useState({
     provider: WALLET_PROVIDERS[0],
     account_name: '',
@@ -39,7 +40,11 @@ export default function WalletSetup() {
 
       try {
         const walletData = await getWalletsByUserId(user.id);
-        if (isMounted) setSavedWallets(walletData);
+        if (isMounted) {
+          setSavedWallets(walletData);
+          // Select all wallets by default
+          setSelectedWalletIds(walletData.map(w => w.id));
+        }
       } catch (error) {
         console.error('Error fetching wallets:', error);
       } finally {
@@ -56,16 +61,16 @@ export default function WalletSetup() {
 
   const addWallet = () => {
     if (currentWallet.account_name && currentWallet.account_number) {
-      setWallets([
-        ...wallets,
-        {
-          ...currentWallet,
-          id: `wallet-${Date.now()}`,
-          user_id: user?.id || '',
-          is_primary: savedWallets.length === 0 && wallets.length === 0,
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      const newWallet = {
+        ...currentWallet,
+        id: `wallet-${Date.now()}`,
+        user_id: user?.id || '',
+        is_primary: false,
+        created_at: new Date().toISOString(),
+      };
+      setWallets([...wallets, newWallet]);
+      // Auto-select new wallet
+      setSelectedWalletIds([...selectedWalletIds, newWallet.id]);
       setCurrentWallet({
         provider: WALLET_PROVIDERS[0],
         account_name: '',
@@ -75,20 +80,18 @@ export default function WalletSetup() {
   };
 
   const removeWallet = (index: number) => {
+    const walletToRemove = wallets[index];
     const newWallets = wallets.filter((_, i) => i !== index);
-    // If removing primary wallet, make the first one primary
-    if (wallets[index].is_primary && newWallets.length > 0) {
-      newWallets[0].is_primary = true;
-    }
     setWallets(newWallets);
+    // Remove from selection
+    setSelectedWalletIds(selectedWalletIds.filter(id => id !== walletToRemove.id));
   };
 
-  const setPrimaryWallet = (index: number) => {
-    setWallets(
-      wallets.map((wallet, i) => ({
-        ...wallet,
-        is_primary: i === index,
-      }))
+  const toggleWalletSelection = (walletId: string) => {
+    setSelectedWalletIds(prev =>
+      prev.includes(walletId)
+        ? prev.filter(id => id !== walletId)
+        : [...prev, walletId]
     );
   };
 
@@ -99,7 +102,7 @@ export default function WalletSetup() {
       return;
     }
 
-    if (wallets.length === 0) {
+    if (wallets.length === 0 && selectedWalletIds.length === 0) {
       alert('Please add at least one wallet');
       return;
     }
@@ -113,13 +116,14 @@ export default function WalletSetup() {
           provider: wallet.provider || WALLET_PROVIDERS[0],
           account_name: wallet.account_name || '',
           account_number: wallet.account_number || '',
-          is_primary: Boolean(wallet.is_primary),
+          is_primary: false,
         });
         createdWallets.push(createdWallet);
       }
 
       setSavedWallets([...savedWallets, ...createdWallets]);
       setWallets([]);
+      setSelectedWalletIds([...selectedWalletIds, ...createdWallets.map(w => w.id)]);
       alert('Wallet saved');
     } catch (error) {
       console.error('Error saving wallets:', error);
@@ -129,15 +133,15 @@ export default function WalletSetup() {
     }
   };
 
-  const handleSetPrimary = async (walletId: string) => {
+  const handleSaveSelection = async () => {
     if (!user) return;
     try {
-      await updateWalletPrimaryStatus(user.id, walletId);
-      const updatedWallets = await getWalletsByUserId(user.id);
-      setSavedWallets(updatedWallets);
+      // Update is_primary status based on selection
+      await updateWalletSelectionStatus(user.id, selectedWalletIds);
+      alert('Wallet selection saved');
     } catch (error) {
-      console.error('Error updating primary wallet:', error);
-      alert('Failed to update primary wallet. Please try again.');
+      console.error('Error saving wallet selection:', error);
+      alert('Failed to save wallet selection. Please try again.');
     }
   };
 
@@ -174,7 +178,7 @@ export default function WalletSetup() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {savedWallets.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Saved Wallets</h3>
+              <h3 className="text-lg font-semibold mb-4">Saved Wallets (Select for Checkout)</h3>
               <div className="space-y-3">
                 {savedWallets.map((wallet) => (
                   <div
@@ -182,35 +186,36 @@ export default function WalletSetup() {
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white"
                   >
                     <div className="flex items-center gap-3">
-                      {wallet.is_primary && <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />}
+                      <input
+                        type="checkbox"
+                        checked={selectedWalletIds.includes(wallet.id)}
+                        onChange={() => toggleWalletSelection(wallet.id)}
+                        className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                      />
                       <div>
                         <p className="font-semibold">{wallet.provider}</p>
                         <p className="text-sm text-gray-600">{wallet.account_name}</p>
                         <p className="text-sm text-gray-500">{wallet.account_number}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {!wallet.is_primary && (
-                        <button
-                          type="button"
-                          onClick={() => handleSetPrimary(wallet.id)}
-                          className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-                        >
-                          Set Primary
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteWallet(wallet.id)}
-                        className="text-red-600 hover:text-red-700"
-                        title="Delete wallet"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteWallet(wallet.id)}
+                      className="text-red-600 hover:text-red-700"
+                      title="Delete wallet"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={handleSaveSelection}
+                className="mt-4 w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Save Selection
+              </button>
             </div>
           )}
 
@@ -287,33 +292,25 @@ export default function WalletSetup() {
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      {wallet.is_primary && (
-                        <Check className="w-5 h-5 text-green-600" />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={wallet.id ? selectedWalletIds.includes(wallet.id) : false}
+                        onChange={() => wallet.id && toggleWalletSelection(wallet.id)}
+                        className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
+                      />
                       <div>
                         <p className="font-semibold">{wallet.provider}</p>
                         <p className="text-sm text-gray-600">{wallet.account_name}</p>
                         <p className="text-sm text-gray-500">{wallet.account_number}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {!wallet.is_primary && (
-                        <button
-                          type="button"
-                          onClick={() => setPrimaryWallet(index)}
-                          className="text-sm text-purple-600 hover:text-purple-700"
-                        >
-                          Set Primary
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeWallet(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeWallet(index)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 ))}
               </div>

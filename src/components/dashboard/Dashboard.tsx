@@ -3,9 +3,9 @@ import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tool
 import { useState, useEffect } from 'react';
 import { getDashboardStats, getSalesData, getTopProducts, getLeastSellingProducts, getLowStockVariants, getSellerSubscriptionWithPlan } from '../../lib/db';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffAuth } from '../../context/StaffAuthContext';
 import type { SubscriptionWithPlan } from '../../lib/schema';
 import LowStockAlerts from './LowStockAlerts';
-import ProfitLossAnalytics from './ProfitLossAnalytics';
 
 type SalesDataPoint = { name: string; sales: number };
 type TopProductDataPoint = { name: string; value: number; color: string };
@@ -13,6 +13,7 @@ type TopProductDataPoint = { name: string; value: number; color: string };
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { staff } = useStaffAuth();
   const [kpiData, setKpiData] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -29,21 +30,32 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchDashboardData() {
-      if (!user) {
+      // Get the seller ID from either user or staff
+      const sellerId = user ? user.id : (staff ? staff.store_id : null);
+      
+      console.log('Dashboard - user:', user);
+      console.log('Dashboard - staff:', staff);
+      console.log('Dashboard - sellerId:', sellerId);
+      
+      if (!sellerId) {
+        console.log('Dashboard - No sellerId found, skipping data fetch');
         setIsLoading(false);
         return;
       }
 
       try {
+        console.log('Dashboard - Fetching data for sellerId:', sellerId);
         const [stats, sales, topProducts, least, low, sub] = await Promise.all([
-          getDashboardStats(user.id),
-          getSalesData(user.id, 7),
-          getTopProducts(user.id, 5),
-          getLeastSellingProducts(user.id, 5),
-          getLowStockVariants(user.id, 5),
-          getSellerSubscriptionWithPlan(user.id),
+          getDashboardStats(sellerId),
+          getSalesData(sellerId, 7),
+          getTopProducts(sellerId, 5),
+          getLeastSellingProducts(sellerId, 5),
+          getLowStockVariants(sellerId, 5),
+          getSellerSubscriptionWithPlan(sellerId),
         ]);
 
+        console.log('Dashboard - Data fetched successfully');
+        console.log('Dashboard - stats:', stats);
         setKpiData(stats);
         setSalesData(sales);
         setTopProductsData(topProducts);
@@ -58,7 +70,7 @@ export default function Dashboard() {
     }
 
     fetchDashboardData();
-  }, [user]);
+  }, [user, staff]);
 
   if (isLoading) {
     return (
@@ -141,8 +153,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Profit & Loss Analytics */}
-      <ProfitLossAnalytics />
+      {/* Profit & Loss Analytics - disabled due to missing order_items table */}
+      {/* <ProfitLossAnalytics sellerId={sellerId || undefined} /> */}
 
       {/* Low Stock Alerts */}
       <LowStockAlerts />
@@ -170,6 +182,7 @@ export default function Dashboard() {
               <p className="text-sm text-gray-600">စုစုပေါင်း အော်ဒါများ</p>
               <p className="text-2xl font-bold text-gray-900">{kpiData.totalOrders}</p>
             </div>
+            
             <div className="bg-[#1a7f8c]/10 p-3 rounded-full">
               <ShoppingCart className="w-6 h-6 text-[#1a7f8c]" />
             </div>
