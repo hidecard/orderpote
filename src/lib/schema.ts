@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS product_variants (
   stock INTEGER DEFAULT 0,
   cost_price INTEGER DEFAULT 0, -- in pyas, for COGS calculation
   attributes_json TEXT, -- JSON string storing custom attribute combinations, e.g., {"size": "M", "color": "Black"}
+  stock_threshold INTEGER DEFAULT 5, -- Alert when stock falls below this value
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
@@ -406,6 +407,7 @@ export interface ProductVariant {
   stock: number;
   cost_price?: number;
   attributes_json?: string; // JSON string for custom attributes
+  stock_threshold?: number; // Alert threshold for low stock
   created_at: string;
 }
 

@@ -214,6 +214,9 @@ async function ensureProductVariantsSchema(): Promise<void> {
   if (!existingColumns.includes('attributes_json')) {
     await turso.execute({ sql: 'ALTER TABLE product_variants ADD COLUMN attributes_json TEXT' });
   }
+  if (!existingColumns.includes('stock_threshold')) {
+    await turso.execute({ sql: 'ALTER TABLE product_variants ADD COLUMN stock_threshold INTEGER DEFAULT 5' });
+  }
 
   productVariantsSchemaEnsured = true;
 }
@@ -411,7 +414,6 @@ type RevenueRow = { total: number | string | null };
 type SalesRow = { date: string; sales: number | string | null };
 type TopProductRow = { name: string; value: number | string };
 type ProductViewRow = { id: string; slug: string; name: string; views: number | string; orders: number | string };
-type LowStockRow = { variant_id: string; product_name: string; variant_name: string; stock: number | string };
 export type LowStockVariant = { variant_id: string; product_name: string; variant_name: string; stock: number };
 
 // Product queries
@@ -1349,27 +1351,6 @@ export async function getLeastSellingProducts(userId: string, limit: number = 5)
   }));
 }
 
-export async function getLowStockVariants(userId: string, threshold: number = 5): Promise<LowStockVariant[]> {
-  const result = await turso.execute({
-    sql: `
-      SELECT v.id as variant_id, p.name as product_name, v.name as variant_name, v.stock
-      FROM product_variants v
-      INNER JOIN products p ON v.product_id = p.id
-      WHERE p.user_id = ? AND v.stock <= ?
-      ORDER BY v.stock ASC
-      LIMIT 20
-    `,
-    args: [userId, threshold],
-  });
-
-  return rowsAs<LowStockRow>(result.rows).map((r) => ({
-    variant_id: String(r.variant_id),
-    product_name: String(r.product_name),
-    variant_name: String(r.variant_name),
-    stock: Number(r.stock),
-  }));
-}
-
 export async function getProductViews(userId: string, limit: number = 10) {
   const result = await turso.execute({
     sql: `
@@ -2224,7 +2205,7 @@ export async function createProductVariantWithAttributes(
   const now = new Date().toISOString();
 
   await turso.execute({
-    sql: 'INSERT INTO product_variants (id, product_id, name, price, stock, cost_price, attributes_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    sql: 'INSERT INTO product_variants (id, product_id, name, price, stock, cost_price, attributes_json, stock_threshold, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     args: [
       id,
       variant.product_id,
@@ -2233,6 +2214,7 @@ export async function createProductVariantWithAttributes(
       variant.stock || 0,
       variant.cost_price || 0,
       JSON.stringify(attributes),
+      variant.stock_threshold || 5,
       now,
     ],
   });
@@ -2246,4 +2228,92 @@ export async function updateOrderDeliveryStatus(orderId: string, status: 'pendin
     sql: 'UPDATE orders SET delivery_status = ?, delivery_service = ?, tracking_id = ?, updated_at = ? WHERE id = ?',
     args: [status, deliveryService || null, trackingId || null, new Date().toISOString(), orderId],
   });
+}
+
+// Get low stock variants
+export async function getLowStockVariants(storeId: string, limit?: number): Promise<{ variant_id: string; product_name: string; variant_name: string; stock: number }[]> {
+  await ensureProductVariantsSchema();
+  const limitClause = limit ? `LIMIT ${limit}` : '';
+  const result = await turso.execute({
+    sql: `
+      SELECT pv.id as variant_id, p.name as product_name, pv.name as variant_name, pv.stock
+      FROM product_variants pv
+      INNER JOIN products p ON pv.product_id = p.id
+      WHERE p.store_id = ? AND pv.stock <= pv.stock_threshold
+      ORDER BY pv.stock ASC
+      ${limitClause}
+    `,
+    args: [storeId],
+  });
+  return result.rows.map(row => ({
+    variant_id: String(row.variant_id),
+    product_name: String(row.product_name),
+    variant_name: String(row.variant_name),
+    stock: Number(row.stock),
+  }));
+}
+
+// Update variant stock threshold
+export async function updateVariantStockThreshold(variantId: string, threshold: number): Promise<void> {
+  await ensureProductVariantsSchema();
+  await turso.execute({
+    sql: 'UPDATE product_variants SET stock_threshold = ? WHERE id = ?',
+    args: [threshold, variantId],
+  });
+}
+
+// Calculate profit & loss for a date range
+export async function calculateProfitLoss(storeId: string, startDate: string, endDate: string): Promise<{
+  totalRevenue: number;
+  totalCOGS: number;
+  grossProfit: number;
+  netProfit: number;
+  orderCount: number;
+}> {
+  const result = await turso.execute({
+    sql: `
+      SELECT 
+        SUM(o.total_price) as total_revenue,
+        COUNT(o.id) as order_count
+      FROM orders o
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE p.store_id = ? 
+        AND o.created_at >= ? 
+        AND o.created_at <= ?
+        AND o.payment_status = 'paid'
+    `,
+    args: [storeId, startDate, endDate],
+  });
+
+  const totalRevenue = result.rows[0].total_revenue ? Number(result.rows[0].total_revenue) : 0;
+  const orderCount = result.rows[0].order_count ? Number(result.rows[0].order_count) : 0;
+
+  // Calculate COGS from sold items
+  const cogsResult = await turso.execute({
+    sql: `
+      SELECT 
+        SUM(oi.quantity * pv.cost_price) as total_cogs
+      FROM order_items oi
+      INNER JOIN orders o ON oi.order_id = o.id
+      INNER JOIN product_variants pv ON oi.variant_id = pv.id
+      INNER JOIN products p ON o.product_id = p.id
+      WHERE p.store_id = ? 
+        AND o.created_at >= ? 
+        AND o.created_at <= ?
+        AND o.payment_status = 'paid'
+    `,
+    args: [storeId, startDate, endDate],
+  });
+
+  const totalCOGS = cogsResult.rows[0].total_cogs ? Number(cogsResult.rows[0].total_cogs) : 0;
+  const grossProfit = totalRevenue - totalCOGS;
+  const netProfit = grossProfit; // Can add other expenses later
+
+  return {
+    totalRevenue,
+    totalCOGS,
+    grossProfit,
+    netProfit,
+    orderCount,
+  };
 }

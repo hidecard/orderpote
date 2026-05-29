@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { getDashboardStats, getSalesData, getTopProducts, getLeastSellingProducts, getLowStockVariants, getSellerSubscriptionWithPlan } from '../../lib/db';
 import { useAuth } from '../../context/AuthContext';
 import type { SubscriptionWithPlan } from '../../lib/schema';
+import LowStockAlerts from './LowStockAlerts';
+import ProfitLossAnalytics from './ProfitLossAnalytics';
 
 type SalesDataPoint = { name: string; sales: number };
 type TopProductDataPoint = { name: string; value: number; color: string };
@@ -138,6 +140,12 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Profit & Loss Analytics */}
+      <ProfitLossAnalytics />
+
+      {/* Low Stock Alerts */}
+      <LowStockAlerts />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
